@@ -1,0 +1,28 @@
+# Python cache and build artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Packaging
+build/
+dist/
+*.egg-info/
+
+# Project artifacts
+data/
+outputs/
+checkpoints/
+
+# IDE and OS
+.vscode/
+.idea/
+.history/
+.DS_Store
+Thumbs.db
