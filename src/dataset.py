@@ -1,9 +1,13 @@
 import random
+import warnings
 from pathlib import Path
 
 import torch
 import torchaudio
 import torchaudio.transforms as T
+import numpy as np
+from scipy.io import wavfile
+from scipy.io.wavfile import WavFileWarning
 from torch.utils.data import Dataset
 
 class SpeechCommandsDataset(Dataset):
@@ -22,6 +26,7 @@ class SpeechCommandsDataset(Dataset):
         freq_mask=8,
         silence_train_samples=2300,
         silence_eval_samples=250,
+        unknown_keep_prob=1.0,
     ):
         """
         Args:
@@ -33,14 +38,22 @@ class SpeechCommandsDataset(Dataset):
             freq_mask (int): Max width for frequency masking.
             silence_train_samples (int): Number of synthetic silence samples for train split.
             silence_eval_samples (int): Number of synthetic silence samples for val split.
+            unknown_keep_prob (float): Probability of keeping an "unknown" sample in train split.
         """
         if split not in {"train", "val", "test"}:
             raise ValueError(f"Unsupported split: {split}")
+        if not (0.0 < unknown_keep_prob <= 1.0):
+            raise ValueError("unknown_keep_prob must be in (0, 1]")
 
         self.root_dir = Path(root_dir)
+        self.audio_root = self.root_dir / "audio" if (self.root_dir / "audio").exists() else self.root_dir
         self.split = split
         self.sample_rate = 16000
         self.apply_augment = apply_augment and split == "train"
+        self.unknown_keep_prob = unknown_keep_prob
+
+        if not self.audio_root.exists():
+            raise FileNotFoundError(f"Audio root does not exist: {self.audio_root}")
 
         self.class_to_idx = {word: i for i, word in enumerate(self.TARGET_WORDS)}
         self.class_to_idx["unknown"] = 10
@@ -62,7 +75,7 @@ class SpeechCommandsDataset(Dataset):
         self.labels = []
         self.bg_noise_files = []
 
-        for label_dir in self.root_dir.iterdir():
+        for label_dir in self.audio_root.iterdir():
             if not label_dir.is_dir():
                 continue
 
@@ -86,6 +99,8 @@ class SpeechCommandsDataset(Dataset):
                     self.file_paths.append(wav_path)
                     self.labels.append(label_idx)
                 elif split == "train" and not is_val and not is_test:
+                    if mapped_label == "unknown" and random.random() > self.unknown_keep_prob:
+                        continue
                     self.file_paths.append(wav_path)
                     self.labels.append(label_idx)
 
@@ -111,6 +126,28 @@ class SpeechCommandsDataset(Dataset):
             return waveform
         return waveform.mean(dim=0, keepdim=True)
 
+    def _load_waveform(self, path):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", WavFileWarning)
+            sample_rate, data = wavfile.read(str(path))
+
+        if data.dtype == np.int16:
+            waveform = data.astype(np.float32) / 32768.0
+        elif data.dtype == np.int32:
+            waveform = data.astype(np.float32) / 2147483648.0
+        elif data.dtype == np.uint8:
+            waveform = (data.astype(np.float32) - 128.0) / 128.0
+        else:
+            waveform = data.astype(np.float32)
+
+        waveform = torch.from_numpy(waveform)
+        if waveform.ndim == 1:
+            waveform = waveform.unsqueeze(0)
+        else:
+            waveform = waveform.transpose(0, 1)
+
+        return waveform, int(sample_rate)
+
     def _resample_if_needed(self, waveform, sample_rate):
         if sample_rate == self.sample_rate:
             return waveform
@@ -125,7 +162,7 @@ class SpeechCommandsDataset(Dataset):
     def _get_random_silence(self):
         """Extract a random 1-second chunk from a background noise file."""
         noise_file = random.choice(self.bg_noise_files)
-        waveform, sample_rate = torchaudio.load(noise_file)
+        waveform, sample_rate = self._load_waveform(noise_file)
         waveform = self._to_mono(waveform)
         waveform = self._resample_if_needed(waveform, sample_rate)
         if waveform.shape[1] < 16000:
@@ -142,7 +179,7 @@ class SpeechCommandsDataset(Dataset):
         if path == self.SILENCE_MARKER:
             waveform = self._get_random_silence()
         else:
-            waveform, sample_rate = torchaudio.load(path)
+            waveform, sample_rate = self._load_waveform(path)
             waveform = self._to_mono(waveform)
             waveform = self._resample_if_needed(waveform, sample_rate)
             waveform = self._pad_or_truncate(waveform, target_length=16000)
