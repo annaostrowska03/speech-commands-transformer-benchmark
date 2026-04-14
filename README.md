@@ -71,6 +71,12 @@ Run a single full experiment:
 python src/train.py --config configs/resnet18_full_baseline.yaml
 ```
 
+Run all prepared full configs:
+
+```powershell
+./scripts/run_resnet_configs.ps1
+```
+
 Full configs define `seeds: [42, 123, 2026, 2137]`, so one command runs all seeds.
 
 To force single-seed run, pass one-element list to `--seeds`:

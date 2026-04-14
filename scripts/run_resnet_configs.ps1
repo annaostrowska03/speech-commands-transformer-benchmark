@@ -34,17 +34,11 @@ foreach ($configName in $ConfigNames) {
         throw "Config file not found: $configPath"
     }
 
-    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($configName)
-
-    foreach ($seed in $Seeds) {
-        $runName = "${baseName}_seed${seed}"
-        $checkpointPath = Join-Path $OutputDir "${runName}.pt"
-
-        Write-Host "Running config: $configName | seed: $seed" -ForegroundColor Cyan
-        & $PythonExe "src/train.py" "--config" $configPath "--seeds" "$seed" "--experiment_name" $runName "--checkpoint_path" $checkpointPath
-        if ($LASTEXITCODE -ne 0) {
-            throw "Experiment failed for config: $configName with seed: $seed"
-        }
+    Write-Host "Running config: $configName | seeds: $($Seeds -join ', ')" -ForegroundColor Cyan
+    $args = @("src/train.py", "--config", $configPath, "--seeds") + ($Seeds | ForEach-Object { "$_" })
+    & $PythonExe @args
+    if ($LASTEXITCODE -ne 0) {
+        throw "Experiment failed for config: $configName"
     }
 }
 
