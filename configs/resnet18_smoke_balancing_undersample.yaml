@@ -1,31 +1,32 @@
-experiment_name: resnet18_full_balancing_undersample
+experiment_name: resnet18_smoke_balancing_undersample
 model: resnet18
 data_path: ./data/train
 
-seeds: [42, 123, 2026, 2137]
-epochs: 40
-patience: 8
+seeds: [42]
+epochs: 1
+patience: 3
 batch_size: 64
-num_workers: 4
+num_workers: 0
 
 lr: 0.001
 optimizer: adam
 momentum: 0.9
-weight_decay: 0.0001
-dropout: 0.1
+weight_decay: 0.0
+dropout: 0.0
 
 n_mels: 64
-use_pretrained: true
+use_pretrained: false
 freeze_backbone: false
 use_augment: false
-time_mask: 30
-freq_mask: 12
+time_mask: 20
+freq_mask: 8
 
 balancing: undersample
 unknown_keep_prob: 0.35
 silence_train_samples: 2300
 silence_eval_samples: 250
 
-run_test: true
+run_test: false
 checkpoint_path: best_model.pt
+disable_mlflow: true
 

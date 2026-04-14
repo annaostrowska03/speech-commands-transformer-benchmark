@@ -1,3 +1,4 @@
+import inspect
 import torch.nn as nn
 from torchvision import models
 
@@ -47,3 +48,45 @@ def get_resnet18_model(
             param.requires_grad = True
 
     return model
+
+
+MODEL_BUILDERS = {
+    "resnet18": get_resnet18_model,
+}
+
+
+def get_available_models():
+    return sorted(MODEL_BUILDERS.keys())
+
+
+def register_model(model_name, builder):
+    if not isinstance(model_name, str) or not model_name:
+        raise ValueError("model_name must be a non-empty string")
+    if not callable(builder):
+        raise TypeError("builder must be callable")
+    if model_name in MODEL_BUILDERS:
+        raise ValueError(f"Model '{model_name}' is already registered")
+    MODEL_BUILDERS[model_name] = builder
+
+
+def get_model(model_name, **model_kwargs):
+    if model_name not in MODEL_BUILDERS:
+        available = ", ".join(get_available_models())
+        raise ValueError(f"Unsupported model '{model_name}'. Available models: {available}")
+
+    builder = MODEL_BUILDERS[model_name]
+    signature = inspect.signature(builder)
+
+    accepts_var_kwargs = any(
+        parameter.kind == inspect.Parameter.VAR_KEYWORD
+        for parameter in signature.parameters.values()
+    )
+    if accepts_var_kwargs:
+        return builder(**model_kwargs)
+
+    filtered_kwargs = {
+        key: value
+        for key, value in model_kwargs.items()
+        if key in signature.parameters
+    }
+    return builder(**filtered_kwargs)

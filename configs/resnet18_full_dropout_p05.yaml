@@ -2,7 +2,7 @@ experiment_name: resnet18_full_dropout_p05
 model: resnet18
 data_path: ./data/train
 
-seed: 42
+seeds: [42, 123, 2026, 2137]
 epochs: 40
 patience: 8
 batch_size: 64
@@ -27,5 +27,5 @@ silence_train_samples: 2300
 silence_eval_samples: 250
 
 run_test: true
-checkpoint_path: outputs/resnet18_full_dropout_p05.pt
+checkpoint_path: best_model.pt
 

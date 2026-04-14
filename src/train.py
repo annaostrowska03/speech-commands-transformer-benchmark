@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from dataset import SpeechCommandsDataset
-from models import get_resnet18_model
+from models import get_available_models, get_model
 import time
 import argparse
 import random
@@ -97,6 +97,14 @@ def evaluate(model, dataloader, criterion, device):
 
     return running_loss / total, correct / total, metrics
 
+
+def resolve_run_output_paths(args):
+    checkpoint_name = Path(args.checkpoint_path).name if args.checkpoint_path else "best_model.pt"
+    run_output_dir = Path("outputs") / args.model / args.experiment_name
+    run_output_dir.mkdir(parents=True, exist_ok=True)
+    checkpoint_path = run_output_dir / checkpoint_name
+    return run_output_dir, checkpoint_path
+
 def run_experiment(args):
     """
     Main experiment runner: setup, training loop, and logging.
@@ -105,8 +113,7 @@ def run_experiment(args):
     gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"
 
     unknown_keep_prob = args.unknown_keep_prob if args.use_unknown_undersampling else 1.0
-    checkpoint_path = Path(args.checkpoint_path)
-    checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    run_output_dir, checkpoint_path = resolve_run_output_paths(args)
 
     train_ds = SpeechCommandsDataset(
         root_dir=args.data_path,
@@ -160,8 +167,9 @@ def run_experiment(args):
             persistent_workers=args.num_workers > 0,
         )
 
-    model = get_resnet18_model(
-        num_classes=12, 
+    model = get_model(
+        args.model,
+        num_classes=12,
         input_channels=1,
         use_pretrained=args.use_pretrained,
         freeze_backbone=args.freeze_backbone,
@@ -186,16 +194,19 @@ def run_experiment(args):
     
     print(f"Starting training on {gpu_name}...")
     print(f"Unknown keep probability (train): {unknown_keep_prob:.3f}")
+    print(f"Run outputs directory: {run_output_dir}")
 
     use_mlflow = (mlflow is not None) and (not args.disable_mlflow)
     if mlflow is None and not args.disable_mlflow:
         print("MLflow is not installed. Continuing without MLflow logging.")
 
-    run_context = mlflow.start_run(run_name=f"ResNet18_{args.experiment_name}") if use_mlflow else contextlib.nullcontext()
+    run_context = mlflow.start_run(run_name=f"{args.model}_{args.experiment_name}") if use_mlflow else contextlib.nullcontext()
     with run_context:
         if use_mlflow:
             mlflow.log_params(vars(args))
             mlflow.log_param("device_name", gpu_name)
+            mlflow.log_param("run_output_dir", str(run_output_dir))
+            mlflow.log_param("checkpoint_path_resolved", str(checkpoint_path))
 
         for epoch in range(args.epochs):
             epoch_start = time.time()
@@ -276,17 +287,24 @@ def load_yaml_config(config_path):
     if not isinstance(config, dict):
         raise ValueError("Config file must contain a top-level key-value mapping")
 
+    # Backward compatibility for older configs that used `seed`.
+    if "seed" in config and "seeds" not in config:
+        config["seeds"] = [int(config["seed"])]
+    config.pop("seed", None)
+
     return config
 
 
 def build_parser():
-    parser = argparse.ArgumentParser(description="ResNet18 Training Script")
+    parser = argparse.ArgumentParser(description="Speech Commands Training Script")
     parser.add_argument('--config', type=str, default=None, help='Path to YAML config file')
+
+    available_models = get_available_models()
     
     # Data params
     parser.add_argument('--data_path', type=str, default='.//data//train', help='Path to dataset root')
     parser.add_argument('--experiment_name', type=str, default='baseline', help='MLflow run name')
-    parser.add_argument('--model', type=str, default='resnet18', choices=['resnet18'], help='Model name (currently only resnet18)')
+    parser.add_argument('--model', type=str, default='resnet18', choices=available_models, help=f"Model name ({', '.join(available_models)})")
     
     # Hyperparams
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
@@ -298,7 +316,7 @@ def build_parser():
     parser.add_argument('--weight_decay', type=float, default=0.0, help='Weight decay')
     parser.add_argument('--dropout', type=float, default=0.0, help='Dropout before classifier head')
     parser.add_argument('--n_mels', type=int, default=64, choices=[64, 128], help='Mel filterbank bins')
-    parser.add_argument('--seed', type=int, default=42, help='Random seed')
+    parser.add_argument('--seeds', type=int, nargs='+', default=[42], help='List of seeds for execution (can contain one element)')
     parser.add_argument('--num_workers', type=int, default=4, help='DataLoader workers')
     parser.add_argument('--freeze_backbone', action='store_true', help='Freeze all layers except modified conv1 and fc')
     parser.add_argument('--use_pretrained', action='store_true', help='Use pre-trained weights')
@@ -315,7 +333,7 @@ def build_parser():
     parser.add_argument('--silence_train_samples', type=int, default=2300, help='Synthetic silence samples for train')
     parser.add_argument('--silence_eval_samples', type=int, default=250, help='Synthetic silence samples for validation')
     parser.add_argument('--run_test', action='store_true', help='Evaluate the best checkpoint on official test split')
-    parser.add_argument('--checkpoint_path', type=str, default='outputs/best_model_resnet18.pt', help='Path where best model checkpoint is saved')
+    parser.add_argument('--checkpoint_path', type=str, default='best_model.pt', help='Checkpoint filename (saved under outputs/{model}/{experiment_name})')
     parser.add_argument('--disable_mlflow', action='store_true', help='Disable MLflow logging')
 
     return parser
@@ -338,6 +356,25 @@ def parse_args_with_config():
 
     return parser.parse_args()
 
+
+def expand_seed_runs(args):
+    seeds = args.seeds if args.seeds is not None else [42]
+    if len(seeds) == 0:
+        raise ValueError("seeds must contain at least one value")
+    seeds = [int(seed) for seed in seeds]
+
+    runs = []
+    for seed in seeds:
+        run_args = argparse.Namespace(**vars(args))
+        run_args.seed = seed
+
+        if len(seeds) > 1:
+            run_args.experiment_name = f"{args.experiment_name}_seed{seed}"
+
+        runs.append(run_args)
+
+    return runs
+
 if __name__ == "__main__":
     args = parse_args_with_config()
 
@@ -348,6 +385,12 @@ if __name__ == "__main__":
     if args.balancing in {'undersample', 'loss+undersample'}:
         args.use_unknown_undersampling = True
 
-    set_seed(args.seed)
-    
-    run_experiment(args)
+    runs = expand_seed_runs(args)
+    if len(runs) > 1:
+        print(f"Multi-seed mode enabled. Running seeds: {[run.seed for run in runs]}")
+
+    for index, run_args in enumerate(runs, start=1):
+        if len(runs) > 1:
+            print(f"\n=== Seed run {index}/{len(runs)} (seed={run_args.seed}) ===")
+        set_seed(run_args.seed)
+        run_experiment(run_args)

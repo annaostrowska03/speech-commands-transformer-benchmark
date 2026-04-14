@@ -71,6 +71,14 @@ Run a single full experiment:
 python src/train.py --config configs/resnet18_full_baseline.yaml
 ```
 
+Full configs define `seeds: [42, 123, 2026, 2137]`, so one command runs all seeds.
+
+To force single-seed run, pass one-element list to `--seeds`:
+
+```bash
+python src/train.py --config configs/resnet18_full_baseline.yaml --seeds 42
+```
+
 Select model from CLI (available names come from `src/models.py` registry):
 
 ```bash
@@ -93,6 +101,15 @@ Available full-experiment configs:
 - `configs/resnet18_full_balancing_loss.yaml`
 - `configs/resnet18_full_balancing_undersample.yaml`
 - `configs/resnet18_full_balancing_loss_undersample.yaml`
+
+Run artifacts are saved per run in:
+- `outputs/{model}/{experiment_name}/`
+
+Per-seed files saved inside each run directory:
+- `best_model_seed{seed}.pt` (best checkpoint)
+- `history_seed{seed}.csv` (full epoch-by-epoch history)
+- `summary_seed{seed}.json` (best metrics, test metrics, timing, dataset sizes, args)
+- `config_seed{seed}.yaml` (resolved run config)
 
 ### Smoke sanity checks (fast)
 
