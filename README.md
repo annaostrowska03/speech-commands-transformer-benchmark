@@ -59,3 +59,27 @@ cd data
 7z x test.7z
 cd ..
 ```
+
+---
+
+
+### Config-based runs
+
+```bash
+python src/train.py --config configs/{path}
+```
+
+### Useful balancing modes
+
+```bash
+python src/train.py --epochs 10 --balancing loss
+
+# unknown undersampling only
+python src/train.py --epochs 10 --balancing undersample --unknown_keep_prob 0.35
+
+# weighted loss + unknown undersampling
+python src/train.py --epochs 10 --balancing loss+undersample --unknown_keep_prob 0.35
+```
+
+The script reports accuracy and macro metrics (`macro_precision`, `macro_recall`, `macro_f1`) for validation,
+and for test if `--run_test` is enabled.

@@ -11,6 +11,7 @@ import numpy as np
 import contextlib
 from pathlib import Path
 from sklearn.metrics import precision_recall_fscore_support
+import yaml
 
 try:
     import mlflow
@@ -267,8 +268,20 @@ def run_experiment(args):
             mlflow.log_metric("total_training_time_sec", total_time)
         print(f"Training finished in {total_time:.2f} seconds.")
 
-if __name__ == "__main__":
+
+def load_yaml_config(config_path):
+    with open(config_path, "r", encoding="utf-8") as file_obj:
+        config = yaml.safe_load(file_obj) or {}
+
+    if not isinstance(config, dict):
+        raise ValueError("Config file must contain a top-level key-value mapping")
+
+    return config
+
+
+def build_parser():
     parser = argparse.ArgumentParser(description="ResNet18 Training Script")
+    parser.add_argument('--config', type=str, default=None, help='Path to YAML config file')
     
     # Data params
     parser.add_argument('--data_path', type=str, default='.//data//train', help='Path to dataset root')
@@ -290,8 +303,7 @@ if __name__ == "__main__":
     parser.add_argument('--freeze_backbone', action='store_true', help='Freeze all layers except modified conv1 and fc')
     parser.add_argument('--use_pretrained', action='store_true', help='Use pre-trained weights')
 
-    
-    # Augmentation and Balancing
+    # Augmentation and balancing
     parser.add_argument('--use_augment', action='store_true', help='Enable SpecAugment')
     parser.add_argument('--augment', type=str, choices=['true', 'false', 'True', 'False'], help='Compatibility flag: set augmentation on/off')
     parser.add_argument('--time_mask', type=int, default=20, help='SpecAugment time mask')
@@ -306,7 +318,28 @@ if __name__ == "__main__":
     parser.add_argument('--checkpoint_path', type=str, default='outputs/best_model_resnet18.pt', help='Path where best model checkpoint is saved')
     parser.add_argument('--disable_mlflow', action='store_true', help='Disable MLflow logging')
 
-    args = parser.parse_args()
+    return parser
+
+
+def parse_args_with_config():
+    parser = build_parser()
+
+    config_parser = argparse.ArgumentParser(add_help=False)
+    config_parser.add_argument('--config', type=str, default=None)
+    config_args, _ = config_parser.parse_known_args()
+
+    if config_args.config:
+        config_values = load_yaml_config(config_args.config)
+        valid_keys = {action.dest for action in parser._actions}
+        unknown_keys = sorted(set(config_values.keys()) - valid_keys)
+        if unknown_keys:
+            raise ValueError(f"Unknown config keys: {unknown_keys}")
+        parser.set_defaults(**config_values)
+
+    return parser.parse_args()
+
+if __name__ == "__main__":
+    args = parse_args_with_config()
 
     if args.augment is not None:
         args.use_augment = args.augment.lower() == 'true'
