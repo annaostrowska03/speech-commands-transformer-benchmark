@@ -19,7 +19,6 @@ dist/
 
 # Project artifacts
 data/
-outputs/
 checkpoints/
 *.pt
 *.pth

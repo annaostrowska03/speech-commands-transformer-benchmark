@@ -1,0 +1,121 @@
+{
+  "run_id": "1b51ac1077dc4e269b0cb4169b199298",
+  "model_name": "resnet18",
+  "optimizer": "adam",
+  "learning_rate": 0.001,
+  "dropout": 0.1,
+  "batch_size": 64,
+  "device": "cuda",
+  "model_parameters": {
+    "total": 11176396,
+    "trainable": 11176396
+  },
+  "model": "resnet18",
+  "experiment_name": "resnet18_full_baseline_seed123",
+  "seed": 123,
+  "device_name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+  "best_epoch": 13,
+  "val_accuracy_best_epoch": 0.9683598183881952,
+  "test_accuracy": 0.9704462326261888,
+  "test_f1_macro": 0.9521879226448562,
+  "training_time_seconds": 1616.8903431892395,
+  "inference_latency_ms": 0.37855261167948734,
+  "run_output_dir": "outputs\\resnet18\\resnet18_full_baseline_seed123",
+  "artifacts": {
+    "checkpoint": "outputs\\resnet18\\resnet18_full_baseline_seed123\\best_model_seed123.pt",
+    "history_csv": "outputs\\resnet18\\resnet18_full_baseline_seed123\\history_seed123.csv",
+    "summary_json": "outputs\\resnet18\\resnet18_full_baseline_seed123\\summary_seed123.json",
+    "config_yaml": "outputs\\resnet18\\resnet18_full_baseline_seed123\\config_seed123.yaml",
+    "confusion_matrix_json": "outputs\\resnet18\\resnet18_full_baseline_seed123\\confusion_matrix_seed123.json",
+    "confusion_matrix_png": "outputs\\resnet18\\resnet18_full_baseline_seed123\\confusion_matrix_seed123.png",
+    "error_analysis_json": "outputs\\resnet18\\resnet18_full_baseline_seed123\\error_analysis_seed123.json"
+  },
+  "dataset_sizes": {
+    "train": 53388,
+    "val": 7048,
+    "test": 6835
+  },
+  "epochs": {
+    "configured": 40,
+    "ran": 22,
+    "early_stopped": true,
+    "best_epoch": 13
+  },
+  "best_validation": {
+    "acc": 0.9683598183881952,
+    "loss": 0.12739309456707149,
+    "macro_precision": 0.9681177438564698,
+    "macro_recall": 0.9373923224337007,
+    "macro_f1": 0.9519898990639969
+  },
+  "test": {
+    "loss": 0.12160309251675815,
+    "acc": 0.9704462326261888,
+    "macro_precision": 0.9706959623638011,
+    "macro_recall": 0.9358171202744103,
+    "macro_f1": 0.9521879226448562,
+    "inference_time_sec": 2.587407100829296,
+    "inference_latency_ms": 0.37855261167948734
+  },
+  "unknown_silence_analysis": {
+    "unknown": {
+      "precision": 0.9709515096065874,
+      "recall": 0.9946110590440488,
+      "support": 4268,
+      "predicted_total": 4372,
+      "most_confused_as": "go",
+      "most_common_source_as_prediction": "right"
+    },
+    "silence": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "support": 0,
+      "predicted_total": 0,
+      "most_confused_as": null,
+      "most_common_source_as_prediction": null
+    }
+  },
+  "timing": {
+    "total_training_time_sec": 1616.8903431892395,
+    "mean_epoch_time_seconds": 70.50076493349943,
+    "max_epoch_time_seconds": 315.7812397480011
+  },
+  "args": {
+    "config": ".\\configs\\resnet18_full_baseline.yaml",
+    "data_path": "./data/train",
+    "experiment_name": "resnet18_full_baseline_seed123",
+    "model": "resnet18",
+    "lr": 0.001,
+    "batch_size": 64,
+    "epochs": 40,
+    "patience": 8,
+    "optimizer": "adam",
+    "momentum": 0.9,
+    "weight_decay": 0.0001,
+    "dropout": 0.1,
+    "n_mels": 64,
+    "seeds": [
+      42,
+      123,
+      2026,
+      2137
+    ],
+    "num_workers": 4,
+    "freeze_backbone": false,
+    "use_pretrained": true,
+    "use_augment": false,
+    "augment": null,
+    "time_mask": 30,
+    "freq_mask": 12,
+    "use_weighted_loss": false,
+    "use_unknown_undersampling": false,
+    "unknown_keep_prob": 1.0,
+    "balancing": "none",
+    "silence_train_samples": 2300,
+    "silence_eval_samples": 250,
+    "run_test": true,
+    "checkpoint_path": "best_model.pt",
+    "disable_mlflow": false,
+    "seed": 123
+  }
+}
