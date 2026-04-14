@@ -9,6 +9,8 @@ __pycache__/
 .venv/
 venv/
 env/
+.venv*/
+venv*/
 
 # Packaging
 build/
@@ -19,6 +21,8 @@ dist/
 data/
 outputs/
 checkpoints/
+*.pt
+*.pth
 
 # IDE and OS
 .vscode/
