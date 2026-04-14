@@ -13,13 +13,23 @@ import csv
 import json
 import re
 from pathlib import Path
-from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import precision_recall_fscore_support, confusion_matrix
 import yaml
+
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+except Exception:
+    plt = None
 
 try:
     import mlflow
 except ImportError:
     mlflow = None
+
+
+CLASS_NAMES = SpeechCommandsDataset.TARGET_WORDS + ["unknown", "silence"]
 
 
 def set_seed(seed):
@@ -64,7 +74,7 @@ def train_one_epoch(model, dataloader, criterion, optimizer, device):
         
     return running_loss / total, correct / total
 
-def evaluate(model, dataloader, criterion, device, measure_latency=False):
+def evaluate(model, dataloader, criterion, device, measure_latency=False, return_predictions=False):
     """
     Evaluates the model on a given split and returns loss/accuracy and macro metrics.
     """
@@ -113,7 +123,140 @@ def evaluate(model, dataloader, criterion, device, measure_latency=False):
         metrics["inference_time_sec"] = float(inference_time_sec)
         metrics["inference_latency_ms"] = float((inference_time_sec / total) * 1000.0) if total > 0 else None
 
+    if return_predictions:
+        return running_loss / total, correct / total, metrics, all_labels, all_preds
     return running_loss / total, correct / total, metrics
+
+
+def count_model_parameters(model):
+    total_params = sum(parameter.numel() for parameter in model.parameters())
+    trainable_params = sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)
+    return int(total_params), int(trainable_params)
+
+
+def build_confusion_analysis(all_labels, all_preds, class_names):
+    if len(all_labels) == 0:
+        return None, None
+
+    num_classes = len(class_names)
+    cm = confusion_matrix(all_labels, all_preds, labels=list(range(num_classes)))
+    cm = cm.astype(np.int64)
+
+    row_sums = cm.sum(axis=1, keepdims=True).astype(np.float64)
+    cm_normalized = np.divide(cm, np.maximum(row_sums, 1.0))
+
+    precision, recall, f1, support = precision_recall_fscore_support(
+        all_labels,
+        all_preds,
+        labels=list(range(num_classes)),
+        average=None,
+        zero_division=0,
+    )
+
+    per_class_metrics = []
+    for class_index, class_name in enumerate(class_names):
+        per_class_metrics.append(
+            {
+                "class_index": int(class_index),
+                "class_name": class_name,
+                "precision": float(precision[class_index]),
+                "recall": float(recall[class_index]),
+                "f1": float(f1[class_index]),
+                "support": int(support[class_index]),
+            }
+        )
+
+    top_confusions = []
+    for true_index in range(num_classes):
+        for pred_index in range(num_classes):
+            if true_index == pred_index:
+                continue
+            count = int(cm[true_index, pred_index])
+            if count == 0:
+                continue
+            row_total = int(cm[true_index, :].sum())
+            top_confusions.append(
+                {
+                    "true_class": class_names[true_index],
+                    "predicted_as": class_names[pred_index],
+                    "count": count,
+                    "rate_within_true": float(count / row_total) if row_total > 0 else 0.0,
+                }
+            )
+    top_confusions = sorted(top_confusions, key=lambda item: item["count"], reverse=True)[:15]
+
+    unknown_silence_analysis = {}
+    for focus_class in ("unknown", "silence"):
+        if focus_class not in class_names:
+            continue
+        idx = class_names.index(focus_class)
+        tp = int(cm[idx, idx])
+        true_total = int(cm[idx, :].sum())
+        predicted_total = int(cm[:, idx].sum())
+
+        row_without_diag = cm[idx, :].copy()
+        row_without_diag[idx] = 0
+        most_confused_as_idx = int(np.argmax(row_without_diag)) if row_without_diag.sum() > 0 else None
+
+        col_without_diag = cm[:, idx].copy()
+        col_without_diag[idx] = 0
+        most_common_source_idx = int(np.argmax(col_without_diag)) if col_without_diag.sum() > 0 else None
+
+        unknown_silence_analysis[focus_class] = {
+            "precision": float(tp / predicted_total) if predicted_total > 0 else 0.0,
+            "recall": float(tp / true_total) if true_total > 0 else 0.0,
+            "support": true_total,
+            "predicted_total": predicted_total,
+            "most_confused_as": class_names[most_confused_as_idx] if most_confused_as_idx is not None else None,
+            "most_common_source_as_prediction": class_names[most_common_source_idx] if most_common_source_idx is not None else None,
+        }
+
+    payload = {
+        "class_names": list(class_names),
+        "confusion_matrix": cm.tolist(),
+        "confusion_matrix_normalized": cm_normalized.tolist(),
+        "per_class_metrics": per_class_metrics,
+        "top_confusions": top_confusions,
+    }
+    return payload, unknown_silence_analysis
+
+
+def save_confusion_matrix_plot(confusion_payload, output_path, title):
+    if plt is None:
+        return
+
+    class_names = confusion_payload["class_names"]
+    matrix = np.array(confusion_payload["confusion_matrix_normalized"], dtype=np.float64)
+
+    figure_size = max(8, len(class_names) * 0.8)
+    fig, axis = plt.subplots(figsize=(figure_size, figure_size))
+    image = axis.imshow(matrix, cmap="Blues", vmin=0.0, vmax=1.0)
+    axis.set_title(title)
+    axis.set_xlabel("Predicted")
+    axis.set_ylabel("True")
+    axis.set_xticks(range(len(class_names)))
+    axis.set_yticks(range(len(class_names)))
+    axis.set_xticklabels(class_names, rotation=45, ha="right")
+    axis.set_yticklabels(class_names)
+
+    color_threshold = 0.5
+    for row_index in range(matrix.shape[0]):
+        for col_index in range(matrix.shape[1]):
+            value = matrix[row_index, col_index]
+            axis.text(
+                col_index,
+                row_index,
+                f"{value:.2f}",
+                ha="center",
+                va="center",
+                color="white" if value >= color_threshold else "black",
+                fontsize=8,
+            )
+
+    fig.colorbar(image, ax=axis, fraction=0.046, pad=0.04, label="Row-normalized")
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=180)
+    plt.close(fig)
 
 
 def add_seed_suffix_to_filename(file_name, seed):
@@ -151,6 +294,9 @@ def resolve_run_output_paths(args):
         "history_csv": run_output_dir / f"history_seed{args.seed}.csv",
         "summary_json": run_output_dir / f"summary_seed{args.seed}.json",
         "config_yaml": run_output_dir / f"config_seed{args.seed}.yaml",
+        "confusion_matrix_json": run_output_dir / f"confusion_matrix_seed{args.seed}.json",
+        "confusion_matrix_png": run_output_dir / f"confusion_matrix_seed{args.seed}.png",
+        "error_analysis_json": run_output_dir / f"error_analysis_seed{args.seed}.json",
     }
     return run_output_dir, output_paths
 
@@ -224,6 +370,22 @@ def aggregate_metric_group(run_summaries, group_key, metric_keys):
     return group_payload
 
 
+def aggregate_unknown_silence(run_summaries):
+    focus_payload = {}
+    for class_name in ("unknown", "silence"):
+        class_payload = {}
+        for metric_name in ("precision", "recall"):
+            values = []
+            for summary in run_summaries:
+                focus_metrics = summary.get("unknown_silence_analysis") or {}
+                metric_value = focus_metrics.get(class_name, {}).get(metric_name)
+                if metric_value is not None:
+                    values.append(metric_value)
+            class_payload[metric_name] = aggregate_numeric(values)
+        focus_payload[class_name] = class_payload
+    return focus_payload
+
+
 def save_multi_seed_summary(base_args, run_results):
     if len(run_results) < 2:
         return None
@@ -249,6 +411,8 @@ def save_multi_seed_summary(base_args, run_results):
                 "best_validation": summary.get("best_validation", {}),
                 "test": summary.get("test", {}),
                 "timing": summary.get("timing", {}),
+                "model_parameters": summary.get("model_parameters", {}),
+                "unknown_silence_analysis": summary.get("unknown_silence_analysis", {}),
             }
         )
 
@@ -273,6 +437,12 @@ def save_multi_seed_summary(base_args, run_results):
                 "timing",
                 ["total_training_time_sec", "mean_epoch_time_seconds", "max_epoch_time_seconds"],
             ),
+            "model_parameters": aggregate_metric_group(
+                run_summaries,
+                "model_parameters",
+                ["total", "trainable"],
+            ),
+            "unknown_silence_analysis": aggregate_unknown_silence(run_summaries),
         },
         "per_seed_runs": per_seed_runs,
     }
@@ -351,6 +521,7 @@ def run_experiment(args):
         freeze_backbone=args.freeze_backbone,
         dropout=args.dropout,
     ).to(device)
+    total_params, trainable_params = count_model_parameters(model)
 
     if args.use_weighted_loss:
         weights = get_class_weights(train_ds.labels, num_classes=12).to(device)
@@ -372,10 +543,20 @@ def run_experiment(args):
     start_time = time.time()
     epoch_history = []
     test_payload = None
+    confusion_payload = None
+    unknown_silence_payload = None
     
     print(f"Starting training on {gpu_name}...")
     print(f"Run seed: {args.seed}")
-    print(f"Unknown keep probability (train): {unknown_keep_prob:.3f}")
+    if args.use_unknown_undersampling:
+        print(f"Unknown keep probability (train): {unknown_keep_prob:.3f}")
+    else:
+        print(
+            "Unknown undersampling disabled; "
+            f"effective unknown keep probability (train): {unknown_keep_prob:.3f} "
+            f"(configured: {args.unknown_keep_prob:.3f})"
+        )
+    print(f"Model parameters: total={total_params:,}, trainable={trainable_params:,}")
     print(f"Run outputs directory: {run_output_dir}")
 
     use_mlflow = (mlflow is not None) and (not args.disable_mlflow)
@@ -482,13 +663,41 @@ def run_experiment(args):
 
         if args.run_test and test_loader is not None:
             load_model_state_dict_from_checkpoint(model, checkpoint_path, device)
-            test_loss, test_acc, test_metrics = evaluate(model, test_loader, criterion, device, measure_latency=True)
+            test_loss, test_acc, test_metrics, test_labels, test_preds = evaluate(
+                model,
+                test_loader,
+                criterion,
+                device,
+                measure_latency=True,
+                return_predictions=True,
+            )
             print(
                 f"Test: Acc={test_acc:.4f}, Loss={test_loss:.4f}, "
                 f"Macro-Precision={test_metrics['macro_precision']:.4f}, "
                 f"Macro-Recall={test_metrics['macro_recall']:.4f}, "
                 f"Macro-F1={test_metrics['macro_f1']:.4f}"
             )
+
+            confusion_payload, unknown_silence_payload = build_confusion_analysis(
+                test_labels,
+                test_preds,
+                CLASS_NAMES,
+            )
+            if confusion_payload is not None:
+                write_run_summary(confusion_payload, output_paths["confusion_matrix_json"])
+                save_confusion_matrix_plot(
+                    confusion_payload,
+                    output_paths["confusion_matrix_png"],
+                    title=f"Confusion Matrix ({args.model}, seed={args.seed})",
+                )
+                write_run_summary(
+                    {
+                        "unknown_silence_analysis": unknown_silence_payload,
+                        "top_confusions": confusion_payload.get("top_confusions", []),
+                    },
+                    output_paths["error_analysis_json"],
+                )
+
             test_payload = {
                 "loss": float(test_loss),
                 "acc": float(test_acc),
@@ -526,6 +735,10 @@ def run_experiment(args):
             "dropout": float(args.dropout),
             "batch_size": int(args.batch_size),
             "device": device.type,
+            "model_parameters": {
+                "total": int(total_params),
+                "trainable": int(trainable_params),
+            },
             "model": args.model,
             "experiment_name": args.experiment_name,
             "seed": int(args.seed),
@@ -557,6 +770,7 @@ def run_experiment(args):
                 "macro_f1": float(best_val_metrics["macro_f1"]) if best_val_metrics is not None else None,
             },
             "test": test_payload,
+            "unknown_silence_analysis": unknown_silence_payload,
             "timing": {
                 "total_training_time_sec": float(total_time),
                 "mean_epoch_time_seconds": float(np.mean(epoch_times)) if len(epoch_times) > 0 else 0.0,
@@ -569,6 +783,11 @@ def run_experiment(args):
         print(f"Saved run config -> {output_paths['config_yaml']}")
         print(f"Saved epoch history -> {output_paths['history_csv']}")
         print(f"Saved run summary -> {output_paths['summary_json']}")
+        if confusion_payload is not None:
+            print(f"Saved confusion matrix JSON -> {output_paths['confusion_matrix_json']}")
+            if plt is not None:
+                print(f"Saved confusion matrix PNG -> {output_paths['confusion_matrix_png']}")
+            print(f"Saved error analysis -> {output_paths['error_analysis_json']}")
         print(f"Training finished in {total_time:.2f} seconds.")
 
         return {

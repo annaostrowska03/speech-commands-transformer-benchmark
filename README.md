@@ -134,9 +134,25 @@ Per-seed files saved inside each run directory:
 - `history_seed{seed}.csv` (full epoch-by-epoch history)
 - `summary_seed{seed}.json` (best metrics, test metrics, timing, dataset sizes, args)
 - `config_seed{seed}.yaml` (resolved run config)
+- `confusion_matrix_seed{seed}.json` (raw + normalized confusion matrix, per-class metrics)
+- `confusion_matrix_seed{seed}.png` (row-normalized confusion matrix plot)
+- `error_analysis_seed{seed}.json` (top confusions + `unknown`/`silence` focused diagnostics)
 
 When running multiple seeds, an aggregate file is also generated:
 - `outputs/{model}/{base_experiment_name}/summary_all_seeds.json` (mean/std/min/max across seeds + per-seed artifact index)
+
+Build report-ready tables from saved outputs:
+
+```bash
+python src/reporting.py --outputs_dir outputs --analysis_dir outputs/analysis
+```
+
+Generated analysis files:
+- `outputs/analysis/leaderboard.csv`
+- `outputs/analysis/leaderboard.md`
+- `outputs/analysis/leaderboard.json`
+- `outputs/analysis/top_confusions.csv`
+- `outputs/analysis/unknown_silence.csv`
 
 ### Smoke sanity checks (fast)
 
@@ -170,3 +186,10 @@ python src/train.py --epochs 10 --balancing loss+undersample --unknown_keep_prob
 
 The script reports accuracy and macro metrics (`macro_precision`, `macro_recall`, `macro_f1`) for validation,
 and for test if `--run_test` is enabled.
+
+### Reproducibility checklist
+
+- Use config files committed to the repository.
+- Run experiments with fixed multi-seed lists (default full configs: `[42, 123, 2026, 2137]`).
+- Keep generated `summary_seed*.json` and `summary_all_seeds.json` as source of report numbers.
+- Build final tables from raw outputs using `src/reporting.py`.
