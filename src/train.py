@@ -9,6 +9,9 @@ import argparse
 import random
 import numpy as np
 import contextlib
+import csv
+import json
+import re
 from pathlib import Path
 from sklearn.metrics import precision_recall_fscore_support
 import yaml
@@ -98,12 +101,167 @@ def evaluate(model, dataloader, criterion, device):
     return running_loss / total, correct / total, metrics
 
 
+def add_seed_suffix_to_filename(file_name, seed):
+    path_obj = Path(file_name)
+    seed_tag = f"seed{seed}"
+    stem = path_obj.stem if path_obj.suffix else path_obj.name
+    if re.search(rf"(?:^|_){seed_tag}$", stem):
+        seeded_stem = stem
+    else:
+        seeded_stem = f"{stem}_{seed_tag}"
+
+    return f"{seeded_stem}{path_obj.suffix}" if path_obj.suffix else seeded_stem
+
+
+def make_json_safe(value):
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, dict):
+        return {str(key): make_json_safe(val) for key, val in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [make_json_safe(item) for item in value]
+    return str(value)
+
+
 def resolve_run_output_paths(args):
     checkpoint_name = Path(args.checkpoint_path).name if args.checkpoint_path else "best_model.pt"
+    checkpoint_name = add_seed_suffix_to_filename(checkpoint_name, args.seed)
     run_output_dir = Path("outputs") / args.model / args.experiment_name
     run_output_dir.mkdir(parents=True, exist_ok=True)
-    checkpoint_path = run_output_dir / checkpoint_name
-    return run_output_dir, checkpoint_path
+
+    output_paths = {
+        "checkpoint": run_output_dir / checkpoint_name,
+        "history_csv": run_output_dir / f"history_seed{args.seed}.csv",
+        "summary_json": run_output_dir / f"summary_seed{args.seed}.json",
+        "config_yaml": run_output_dir / f"config_seed{args.seed}.yaml",
+    }
+    return run_output_dir, output_paths
+
+
+def write_epoch_history_csv(history_rows, csv_path):
+    fieldnames = [
+        "epoch",
+        "train_loss",
+        "train_acc",
+        "val_loss",
+        "val_acc",
+        "val_macro_precision",
+        "val_macro_recall",
+        "val_macro_f1",
+        "epoch_duration_sec",
+        "is_best",
+        "best_val_acc_so_far",
+        "patience_counter",
+    ]
+    with open(csv_path, "w", newline="", encoding="utf-8") as file_obj:
+        writer = csv.DictWriter(file_obj, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in history_rows:
+            writer.writerow(row)
+
+
+def write_run_summary(summary_payload, summary_path):
+    with open(summary_path, "w", encoding="utf-8") as file_obj:
+        json.dump(summary_payload, file_obj, indent=2)
+
+
+def write_run_config(args, config_path):
+    config_payload = make_json_safe(vars(args))
+    with open(config_path, "w", encoding="utf-8") as file_obj:
+        yaml.safe_dump(config_payload, file_obj, sort_keys=True)
+
+
+def load_model_state_dict_from_checkpoint(model, checkpoint_path, device):
+    checkpoint = torch.load(str(checkpoint_path), map_location=device)
+    if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
+        model.load_state_dict(checkpoint["model_state_dict"])
+        return checkpoint
+    model.load_state_dict(checkpoint)
+    return {}
+
+
+def aggregate_numeric(values):
+    if len(values) == 0:
+        return None
+    array = np.array(values, dtype=np.float64)
+    return {
+        "mean": float(np.mean(array)),
+        "std": float(np.std(array)),
+        "min": float(np.min(array)),
+        "max": float(np.max(array)),
+        "n": int(array.size),
+    }
+
+
+def aggregate_metric_group(run_summaries, group_key, metric_keys):
+    group_payload = {}
+    for metric_name in metric_keys:
+        metric_values = []
+        for summary in run_summaries:
+            metric_value = summary.get(group_key, {}).get(metric_name)
+            if metric_value is not None:
+                metric_values.append(metric_value)
+        group_payload[metric_name] = aggregate_numeric(metric_values)
+    return group_payload
+
+
+def save_multi_seed_summary(base_args, run_results):
+    if len(run_results) < 2:
+        return None
+
+    aggregate_output_dir = Path("outputs") / base_args.model / base_args.experiment_name
+    aggregate_output_dir.mkdir(parents=True, exist_ok=True)
+    aggregate_summary_path = aggregate_output_dir / "summary_all_seeds.json"
+
+    run_summaries = [run_result["summary"] for run_result in run_results]
+    seeds = [int(run_result["seed"]) for run_result in run_results]
+
+    per_seed_runs = []
+    for run_result in run_results:
+        summary = run_result["summary"]
+        per_seed_runs.append(
+            {
+                "seed": int(run_result["seed"]),
+                "experiment_name": run_result["experiment_name"],
+                "run_output_dir": run_result["run_output_dir"],
+                "summary_path": run_result["summary_path"],
+                "artifacts": summary.get("artifacts", {}),
+                "epochs": summary.get("epochs", {}),
+                "best_validation": summary.get("best_validation", {}),
+                "test": summary.get("test", {}),
+                "timing": summary.get("timing", {}),
+            }
+        )
+
+    aggregate_payload = {
+        "model": base_args.model,
+        "experiment_name": base_args.experiment_name,
+        "seeds": seeds,
+        "num_runs": len(run_results),
+        "aggregate": {
+            "best_validation": aggregate_metric_group(
+                run_summaries,
+                "best_validation",
+                ["acc", "loss", "macro_precision", "macro_recall", "macro_f1"],
+            ),
+            "test": aggregate_metric_group(
+                run_summaries,
+                "test",
+                ["acc", "loss", "macro_precision", "macro_recall", "macro_f1"],
+            ),
+            "timing": aggregate_metric_group(
+                run_summaries,
+                "timing",
+                ["total_training_time_sec", "mean_epoch_time_sec", "max_epoch_time_sec"],
+            ),
+        },
+        "per_seed_runs": per_seed_runs,
+    }
+
+    write_run_summary(aggregate_payload, aggregate_summary_path)
+    return str(aggregate_summary_path)
 
 def run_experiment(args):
     """
@@ -113,7 +271,8 @@ def run_experiment(args):
     gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"
 
     unknown_keep_prob = args.unknown_keep_prob if args.use_unknown_undersampling else 1.0
-    run_output_dir, checkpoint_path = resolve_run_output_paths(args)
+    run_output_dir, output_paths = resolve_run_output_paths(args)
+    checkpoint_path = output_paths["checkpoint"]
 
     train_ds = SpeechCommandsDataset(
         root_dir=args.data_path,
@@ -188,11 +347,17 @@ def run_experiment(args):
     else:
         optimizer = optim.Adam(trainable_params, lr=args.lr, weight_decay=args.weight_decay)
 
-    best_val_acc = 0.0
+    best_val_acc = float("-inf")
+    best_val_loss = None
+    best_val_metrics = None
+    best_epoch = None
     patience_counter = 0
     start_time = time.time()
+    epoch_history = []
+    test_payload = None
     
     print(f"Starting training on {gpu_name}...")
+    print(f"Run seed: {args.seed}")
     print(f"Unknown keep probability (train): {unknown_keep_prob:.3f}")
     print(f"Run outputs directory: {run_output_dir}")
 
@@ -240,22 +405,57 @@ def run_experiment(args):
             )
 
             # Early Stopping
-            if epoch == 0 or val_acc > best_val_acc:
+            is_best = val_acc > best_val_acc
+            if is_best:
                 best_val_acc = val_acc
+                best_val_loss = val_loss
+                best_val_metrics = dict(val_metrics)
+                best_epoch = epoch
                 patience_counter = 0
-                torch.save(model.state_dict(), str(checkpoint_path))
+                checkpoint_payload = {
+                    "model_state_dict": model.state_dict(),
+                    "seed": int(args.seed),
+                    "model": args.model,
+                    "experiment_name": args.experiment_name,
+                    "best_epoch": int(epoch),
+                    "best_val_acc": float(val_acc),
+                    "best_val_loss": float(val_loss),
+                    "best_val_metrics": make_json_safe(val_metrics),
+                }
+                torch.save(checkpoint_payload, str(checkpoint_path))
                 print(f"New best model saved (Val Acc: {val_acc:.4f}) -> {checkpoint_path}")
             else:
                 patience_counter += 1
-                if patience_counter >= args.patience:
-                    print(f"Early stopping triggered after {epoch+1} epochs.")
-                    break
+
+            epoch_history.append(
+                {
+                    "epoch": int(epoch),
+                    "train_loss": float(train_loss),
+                    "train_acc": float(train_acc),
+                    "val_loss": float(val_loss),
+                    "val_acc": float(val_acc),
+                    "val_macro_precision": float(val_metrics["macro_precision"]),
+                    "val_macro_recall": float(val_metrics["macro_recall"]),
+                    "val_macro_f1": float(val_metrics["macro_f1"]),
+                    "epoch_duration_sec": float(epoch_duration),
+                    "is_best": int(is_best),
+                    "best_val_acc_so_far": float(best_val_acc),
+                    "patience_counter": int(patience_counter),
+                }
+            )
+
+            if patience_counter >= args.patience:
+                print(f"Early stopping triggered after {epoch+1} epochs.")
+                break
 
         if use_mlflow:
-            mlflow.log_metric("best_val_acc", best_val_acc)
+            if best_val_acc != float("-inf"):
+                mlflow.log_metric("best_val_acc", best_val_acc)
+            if best_epoch is not None:
+                mlflow.log_metric("best_epoch", best_epoch)
 
         if args.run_test and test_loader is not None:
-            model.load_state_dict(torch.load(str(checkpoint_path), map_location=device))
+            load_model_state_dict_from_checkpoint(model, checkpoint_path, device)
             test_loss, test_acc, test_metrics = evaluate(model, test_loader, criterion, device)
             print(
                 f"Test: Acc={test_acc:.4f}, Loss={test_loss:.4f}, "
@@ -263,6 +463,13 @@ def run_experiment(args):
                 f"Macro-Recall={test_metrics['macro_recall']:.4f}, "
                 f"Macro-F1={test_metrics['macro_f1']:.4f}"
             )
+            test_payload = {
+                "loss": float(test_loss),
+                "acc": float(test_acc),
+                "macro_precision": float(test_metrics["macro_precision"]),
+                "macro_recall": float(test_metrics["macro_recall"]),
+                "macro_f1": float(test_metrics["macro_f1"]),
+            }
             if use_mlflow:
                 mlflow.log_metrics(
                     {
@@ -277,7 +484,58 @@ def run_experiment(args):
         total_time = time.time() - start_time
         if use_mlflow:
             mlflow.log_metric("total_training_time_sec", total_time)
+
+        write_run_config(args, output_paths["config_yaml"])
+        write_epoch_history_csv(epoch_history, output_paths["history_csv"])
+
+        epoch_times = [row["epoch_duration_sec"] for row in epoch_history]
+        summary_payload = {
+            "model": args.model,
+            "experiment_name": args.experiment_name,
+            "seed": int(args.seed),
+            "device_name": gpu_name,
+            "run_output_dir": str(run_output_dir),
+            "artifacts": {key: str(path_obj) for key, path_obj in output_paths.items()},
+            "dataset_sizes": {
+                "train": len(train_ds),
+                "val": len(val_ds),
+                "test": len(test_loader.dataset) if test_loader is not None else 0,
+            },
+            "epochs": {
+                "configured": int(args.epochs),
+                "ran": int(len(epoch_history)),
+                "early_stopped": bool(len(epoch_history) < args.epochs),
+                "best_epoch": int(best_epoch) if best_epoch is not None else None,
+            },
+            "best_validation": {
+                "acc": float(best_val_acc) if best_val_acc != float("-inf") else None,
+                "loss": float(best_val_loss) if best_val_loss is not None else None,
+                "macro_precision": float(best_val_metrics["macro_precision"]) if best_val_metrics is not None else None,
+                "macro_recall": float(best_val_metrics["macro_recall"]) if best_val_metrics is not None else None,
+                "macro_f1": float(best_val_metrics["macro_f1"]) if best_val_metrics is not None else None,
+            },
+            "test": test_payload,
+            "timing": {
+                "total_training_time_sec": float(total_time),
+                "mean_epoch_time_sec": float(np.mean(epoch_times)) if len(epoch_times) > 0 else 0.0,
+                "max_epoch_time_sec": float(np.max(epoch_times)) if len(epoch_times) > 0 else 0.0,
+            },
+            "args": make_json_safe(vars(args)),
+        }
+        write_run_summary(summary_payload, output_paths["summary_json"])
+
+        print(f"Saved run config -> {output_paths['config_yaml']}")
+        print(f"Saved epoch history -> {output_paths['history_csv']}")
+        print(f"Saved run summary -> {output_paths['summary_json']}")
         print(f"Training finished in {total_time:.2f} seconds.")
+
+        return {
+            "seed": int(args.seed),
+            "experiment_name": args.experiment_name,
+            "run_output_dir": str(run_output_dir),
+            "summary_path": str(output_paths["summary_json"]),
+            "summary": summary_payload,
+        }
 
 
 def load_yaml_config(config_path):
@@ -333,7 +591,7 @@ def build_parser():
     parser.add_argument('--silence_train_samples', type=int, default=2300, help='Synthetic silence samples for train')
     parser.add_argument('--silence_eval_samples', type=int, default=250, help='Synthetic silence samples for validation')
     parser.add_argument('--run_test', action='store_true', help='Evaluate the best checkpoint on official test split')
-    parser.add_argument('--checkpoint_path', type=str, default='best_model.pt', help='Checkpoint filename (saved under outputs/{model}/{experiment_name})')
+    parser.add_argument('--checkpoint_path', type=str, default='best_model.pt', help='Base checkpoint filename (saved under outputs/{model}/{experiment_name} with automatic seed suffix)')
     parser.add_argument('--disable_mlflow', action='store_true', help='Disable MLflow logging')
 
     return parser
@@ -389,8 +647,14 @@ if __name__ == "__main__":
     if len(runs) > 1:
         print(f"Multi-seed mode enabled. Running seeds: {[run.seed for run in runs]}")
 
+    run_results = []
     for index, run_args in enumerate(runs, start=1):
         if len(runs) > 1:
-            print(f"\n=== Seed run {index}/{len(runs)} (seed={run_args.seed}) ===")
+            print(f"Seed run {index}/{len(runs)} (seed={run_args.seed})")
         set_seed(run_args.seed)
-        run_experiment(run_args)
+        run_result = run_experiment(run_args)
+        run_results.append(run_result)
+
+    aggregate_summary_path = save_multi_seed_summary(args, run_results)
+    if aggregate_summary_path is not None:
+        print(f"Saved multi-seed aggregate summary -> {aggregate_summary_path}")

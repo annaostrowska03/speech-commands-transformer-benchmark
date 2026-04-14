@@ -111,6 +111,9 @@ Per-seed files saved inside each run directory:
 - `summary_seed{seed}.json` (best metrics, test metrics, timing, dataset sizes, args)
 - `config_seed{seed}.yaml` (resolved run config)
 
+When running multiple seeds, an aggregate file is also generated:
+- `outputs/{model}/{base_experiment_name}/summary_all_seeds.json` (mean/std/min/max across seeds + per-seed artifact index)
+
 ### Smoke sanity checks (fast)
 
 Run quick debug experiment:
