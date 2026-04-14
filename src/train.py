@@ -521,7 +521,7 @@ def run_experiment(args):
         freeze_backbone=args.freeze_backbone,
         dropout=args.dropout,
     ).to(device)
-    total_params, trainable_params = count_model_parameters(model)
+    total_params, trainable_param_count = count_model_parameters(model)
 
     if args.use_weighted_loss:
         weights = get_class_weights(train_ds.labels, num_classes=12).to(device)
@@ -529,11 +529,11 @@ def run_experiment(args):
     else:
         criterion = nn.CrossEntropyLoss()
 
-    trainable_params = filter(lambda parameter: parameter.requires_grad, model.parameters())
+    trainable_param_iterator = filter(lambda parameter: parameter.requires_grad, model.parameters())
     if args.optimizer == "sgd":
-        optimizer = optim.SGD(trainable_params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+        optimizer = optim.SGD(trainable_param_iterator, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
     else:
-        optimizer = optim.Adam(trainable_params, lr=args.lr, weight_decay=args.weight_decay)
+        optimizer = optim.Adam(trainable_param_iterator, lr=args.lr, weight_decay=args.weight_decay)
 
     best_val_acc = float("-inf")
     best_val_loss = None
@@ -556,7 +556,7 @@ def run_experiment(args):
             f"effective unknown keep probability (train): {unknown_keep_prob:.3f} "
             f"(configured: {args.unknown_keep_prob:.3f})"
         )
-    print(f"Model parameters: total={total_params:,}, trainable={trainable_params:,}")
+    print(f"Model parameters: total={total_params:,}, trainable={trainable_param_count:,}")
     print(f"Run outputs directory: {run_output_dir}")
 
     use_mlflow = (mlflow is not None) and (not args.disable_mlflow)
@@ -737,7 +737,7 @@ def run_experiment(args):
             "device": device.type,
             "model_parameters": {
                 "total": int(total_params),
-                "trainable": int(trainable_params),
+                "trainable": int(trainable_param_count),
             },
             "model": args.model,
             "experiment_name": args.experiment_name,
