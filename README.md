@@ -91,6 +91,12 @@ Select model from CLI (available names come from `src/models.py` registry):
 python src/train.py --model resnet18 --config configs/resnet18_full_baseline.yaml
 ```
 
+Example for MobileNetV2:
+
+```bash
+python src/train.py --model mobilenetv2 --config configs/mobilenetv2_full_baseline.yaml
+```
+
 Or set model directly in YAML config:
 
 ```yaml
@@ -107,6 +113,18 @@ Available full-experiment configs:
 - `configs/resnet18_full_balancing_loss.yaml`
 - `configs/resnet18_full_balancing_undersample.yaml`
 - `configs/resnet18_full_balancing_loss_undersample.yaml`
+
+Optional full-experiment configs (additional ablations + MobileNetV2):
+- `configs/mobilenetv2_full_baseline.yaml`
+- `configs/mobilenetv2_full_specaugment.yaml`
+- `configs/resnet18_full_batch32.yaml`
+- `configs/resnet18_full_lr0003.yaml`
+
+Run optional full configs:
+
+```powershell
+./scripts/run_optional_configs.ps1
+```
 
 Run artifacts are saved per run in:
 - `outputs/{model}/{experiment_name}/`
@@ -126,6 +144,16 @@ Run quick debug experiment:
 
 ```bash
 python src/train.py --config configs/resnet18_smoke_baseline.yaml
+```
+
+Optional smoke configs:
+- `configs/mobilenetv2_smoke_baseline.yaml`
+- `configs/mobilenetv2_smoke_specaugment.yaml`
+
+Run optional smoke configs:
+
+```powershell
+./scripts/run_optional_smoke.ps1
 ```
 
 ### Useful balancing modes
