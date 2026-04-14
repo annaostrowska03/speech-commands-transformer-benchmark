@@ -22,10 +22,11 @@ time_mask: 30
 freq_mask: 12
 
 balancing: none
-unknown_keep_prob: 0.35
+unknown_keep_prob: 1.0
 silence_train_samples: 2300
 silence_eval_samples: 250
 
 run_test: true
 checkpoint_path: best_model.pt
+
 

@@ -22,11 +22,12 @@ time_mask: 20
 freq_mask: 8
 
 balancing: loss
-unknown_keep_prob: 0.35
+unknown_keep_prob: 1.0
 silence_train_samples: 2300
 silence_eval_samples: 250
 
 run_test: false
 checkpoint_path: best_model.pt
 disable_mlflow: true
+
 
