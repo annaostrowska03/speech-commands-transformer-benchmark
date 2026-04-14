@@ -61,12 +61,45 @@ cd ..
 ```
 
 ---
+## Training
 
+### Experiments
 
-### Config-based runs
+Run a single full experiment:
 
 ```bash
-python src/train.py --config configs/{path}
+python src/train.py --config configs/resnet18_full_baseline.yaml
+```
+
+Select model from CLI (available names come from `src/models.py` registry):
+
+```bash
+python src/train.py --model resnet18 --config configs/resnet18_full_baseline.yaml
+```
+
+Or set model directly in YAML config:
+
+```yaml
+model: resnet18
+```
+
+Available full-experiment configs:
+- `configs/resnet18_full_baseline.yaml`
+- `configs/resnet18_full_nmels128.yaml`
+- `configs/resnet18_full_optimizer_sgd.yaml`
+- `configs/resnet18_full_dropout_p03.yaml`
+- `configs/resnet18_full_dropout_p05.yaml`
+- `configs/resnet18_full_specaugment.yaml`
+- `configs/resnet18_full_balancing_loss.yaml`
+- `configs/resnet18_full_balancing_undersample.yaml`
+- `configs/resnet18_full_balancing_loss_undersample.yaml`
+
+### Smoke sanity checks (fast)
+
+Run quick debug experiment:
+
+```bash
+python src/train.py --config configs/resnet18_smoke_baseline.yaml
 ```
 
 ### Useful balancing modes
