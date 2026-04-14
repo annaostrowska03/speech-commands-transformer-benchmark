@@ -50,8 +50,53 @@ def get_resnet18_model(
     return model
 
 
+def get_mobilenetv2_model(
+    num_classes=12,
+    input_channels=1,
+    use_pretrained=True,
+    freeze_backbone=False,
+    dropout=0.0,
+):
+    weights = models.MobileNet_V2_Weights.IMAGENET1K_V2 if use_pretrained else None
+    model = models.mobilenet_v2(weights=weights)
+
+    if freeze_backbone:
+        for param in model.parameters():
+            param.requires_grad = False
+
+    existing_layer = model.features[0][0]
+    model.features[0][0] = nn.Conv2d(
+        in_channels=input_channels,
+        out_channels=existing_layer.out_channels,
+        kernel_size=existing_layer.kernel_size,
+        stride=existing_layer.stride,
+        padding=existing_layer.padding,
+        bias=(existing_layer.bias is not None),
+    )
+
+    if use_pretrained and input_channels == 1:
+        model.features[0][0].weight.data.copy_(existing_layer.weight.data.mean(dim=1, keepdim=True))
+        if existing_layer.bias is not None and model.features[0][0].bias is not None:
+            model.features[0][0].bias.data.copy_(existing_layer.bias.data)
+
+    num_ftrs = model.classifier[1].in_features
+    model.classifier = nn.Sequential(
+        nn.Dropout(p=max(0.0, float(dropout))),
+        nn.Linear(num_ftrs, num_classes),
+    )
+
+    if freeze_backbone:
+        for param in model.features[0][0].parameters():
+            param.requires_grad = True
+        for param in model.classifier.parameters():
+            param.requires_grad = True
+
+    return model
+
+
 MODEL_BUILDERS = {
     "resnet18": get_resnet18_model,
+    "mobilenetv2": get_mobilenetv2_model,
 }
 
 
