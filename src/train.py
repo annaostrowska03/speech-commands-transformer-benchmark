@@ -64,7 +64,7 @@ def train_one_epoch(model, dataloader, criterion, optimizer, device):
         
     return running_loss / total, correct / total
 
-def evaluate(model, dataloader, criterion, device):
+def evaluate(model, dataloader, criterion, device, measure_latency=False):
     """
     Evaluates the model on a given split and returns loss/accuracy and macro metrics.
     """
@@ -74,11 +74,23 @@ def evaluate(model, dataloader, criterion, device):
     total = 0
     all_labels = []
     all_preds = []
+    inference_time_sec = 0.0
     
     with torch.no_grad():
         for inputs, labels in dataloader:
             inputs, labels = inputs.to(device), labels.to(device)
+
+            if measure_latency and device.type == "cuda":
+                torch.cuda.synchronize()
+            batch_start = time.perf_counter() if measure_latency else None
+
             outputs = model(inputs)
+
+            if measure_latency and device.type == "cuda":
+                torch.cuda.synchronize()
+            if measure_latency and batch_start is not None:
+                inference_time_sec += time.perf_counter() - batch_start
+
             loss = criterion(outputs, labels)
             
             running_loss += loss.item() * inputs.size(0)
@@ -97,6 +109,9 @@ def evaluate(model, dataloader, criterion, device):
         "macro_recall": float(macro_recall),
         "macro_f1": float(macro_f1),
     }
+    if measure_latency:
+        metrics["inference_time_sec"] = float(inference_time_sec)
+        metrics["inference_latency_ms"] = float((inference_time_sec / total) * 1000.0) if total > 0 else None
 
     return running_loss / total, correct / total, metrics
 
@@ -144,13 +159,15 @@ def write_epoch_history_csv(history_rows, csv_path):
     fieldnames = [
         "epoch",
         "train_loss",
-        "train_acc",
+        "train_accuracy",
         "val_loss",
-        "val_acc",
+        "val_accuracy",
         "val_macro_precision",
         "val_macro_recall",
         "val_macro_f1",
-        "epoch_duration_sec",
+        "val_f1_macro",
+        "epoch_time_seconds",
+        "learning_rate_current",
         "is_best",
         "best_val_acc_so_far",
         "patience_counter",
@@ -249,12 +266,12 @@ def save_multi_seed_summary(base_args, run_results):
             "test": aggregate_metric_group(
                 run_summaries,
                 "test",
-                ["acc", "loss", "macro_precision", "macro_recall", "macro_f1"],
+                ["acc", "loss", "macro_precision", "macro_recall", "macro_f1", "inference_latency_ms"],
             ),
             "timing": aggregate_metric_group(
                 run_summaries,
                 "timing",
-                ["total_training_time_sec", "mean_epoch_time_sec", "max_epoch_time_sec"],
+                ["total_training_time_sec", "mean_epoch_time_seconds", "max_epoch_time_seconds"],
             ),
         },
         "per_seed_runs": per_seed_runs,
@@ -366,10 +383,15 @@ def run_experiment(args):
         print("MLflow is not installed. Continuing without MLflow logging.")
 
     run_context = mlflow.start_run(run_name=f"{args.model}_{args.experiment_name}") if use_mlflow else contextlib.nullcontext()
-    with run_context:
+    run_id = f"{args.model}_{args.experiment_name}_seed{args.seed}"
+    with run_context as active_run:
         if use_mlflow:
+            if active_run is not None:
+                run_id = active_run.info.run_id
             mlflow.log_params(vars(args))
             mlflow.log_param("device_name", gpu_name)
+            mlflow.log_param("device", device.type)
+            mlflow.log_param("run_id", run_id)
             mlflow.log_param("run_output_dir", str(run_output_dir))
             mlflow.log_param("checkpoint_path_resolved", str(checkpoint_path))
 
@@ -378,6 +400,7 @@ def run_experiment(args):
 
             train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer, device)
             val_loss, val_acc, val_metrics = evaluate(model, val_loader, criterion, device)
+            current_lr = float(optimizer.param_groups[0]["lr"])
 
             epoch_duration = time.time() - epoch_start
 
@@ -385,13 +408,14 @@ def run_experiment(args):
                 mlflow.log_metrics(
                     {
                         "train_loss": train_loss,
-                        "train_acc": train_acc,
+                        "train_accuracy": train_acc,
                         "val_loss": val_loss,
-                        "val_acc": val_acc,
+                        "val_accuracy": val_acc,
                         "val_macro_precision": val_metrics["macro_precision"],
                         "val_macro_recall": val_metrics["macro_recall"],
                         "val_macro_f1": val_metrics["macro_f1"],
-                        "epoch_duration_sec": epoch_duration,
+                        "learning_rate_current": current_lr,
+                        "epoch_time_seconds": epoch_duration,
                     },
                     step=epoch,
                 )
@@ -431,13 +455,15 @@ def run_experiment(args):
                 {
                     "epoch": int(epoch),
                     "train_loss": float(train_loss),
-                    "train_acc": float(train_acc),
+                    "train_accuracy": float(train_acc),
                     "val_loss": float(val_loss),
-                    "val_acc": float(val_acc),
+                    "val_accuracy": float(val_acc),
                     "val_macro_precision": float(val_metrics["macro_precision"]),
                     "val_macro_recall": float(val_metrics["macro_recall"]),
                     "val_macro_f1": float(val_metrics["macro_f1"]),
-                    "epoch_duration_sec": float(epoch_duration),
+                    "val_f1_macro": float(val_metrics["macro_f1"]),
+                    "epoch_time_seconds": float(epoch_duration),
+                    "learning_rate_current": current_lr,
                     "is_best": int(is_best),
                     "best_val_acc_so_far": float(best_val_acc),
                     "patience_counter": int(patience_counter),
@@ -456,7 +482,7 @@ def run_experiment(args):
 
         if args.run_test and test_loader is not None:
             load_model_state_dict_from_checkpoint(model, checkpoint_path, device)
-            test_loss, test_acc, test_metrics = evaluate(model, test_loader, criterion, device)
+            test_loss, test_acc, test_metrics = evaluate(model, test_loader, criterion, device, measure_latency=True)
             print(
                 f"Test: Acc={test_acc:.4f}, Loss={test_loss:.4f}, "
                 f"Macro-Precision={test_metrics['macro_precision']:.4f}, "
@@ -469,6 +495,8 @@ def run_experiment(args):
                 "macro_precision": float(test_metrics["macro_precision"]),
                 "macro_recall": float(test_metrics["macro_recall"]),
                 "macro_f1": float(test_metrics["macro_f1"]),
+                "inference_time_sec": float(test_metrics["inference_time_sec"]),
+                "inference_latency_ms": float(test_metrics["inference_latency_ms"]) if test_metrics["inference_latency_ms"] is not None else None,
             }
             if use_mlflow:
                 mlflow.log_metrics(
@@ -478,6 +506,7 @@ def run_experiment(args):
                         "test_macro_precision": test_metrics["macro_precision"],
                         "test_macro_recall": test_metrics["macro_recall"],
                         "test_macro_f1": test_metrics["macro_f1"],
+                        "test_inference_latency_ms": test_metrics["inference_latency_ms"] if test_metrics["inference_latency_ms"] is not None else 0.0,
                     }
                 )
 
@@ -488,12 +517,25 @@ def run_experiment(args):
         write_run_config(args, output_paths["config_yaml"])
         write_epoch_history_csv(epoch_history, output_paths["history_csv"])
 
-        epoch_times = [row["epoch_duration_sec"] for row in epoch_history]
+        epoch_times = [row["epoch_time_seconds"] for row in epoch_history]
         summary_payload = {
+            "run_id": run_id,
+            "model_name": args.model,
+            "optimizer": args.optimizer,
+            "learning_rate": float(args.lr),
+            "dropout": float(args.dropout),
+            "batch_size": int(args.batch_size),
+            "device": device.type,
             "model": args.model,
             "experiment_name": args.experiment_name,
             "seed": int(args.seed),
             "device_name": gpu_name,
+            "best_epoch": int(best_epoch) if best_epoch is not None else None,
+            "val_accuracy_best_epoch": float(best_val_acc) if best_val_acc != float("-inf") else None,
+            "test_accuracy": float(test_payload["acc"]) if test_payload is not None else None,
+            "test_f1_macro": float(test_payload["macro_f1"]) if test_payload is not None else None,
+            "training_time_seconds": float(total_time),
+            "inference_latency_ms": float(test_payload["inference_latency_ms"]) if test_payload is not None and test_payload.get("inference_latency_ms") is not None else None,
             "run_output_dir": str(run_output_dir),
             "artifacts": {key: str(path_obj) for key, path_obj in output_paths.items()},
             "dataset_sizes": {
@@ -517,8 +559,8 @@ def run_experiment(args):
             "test": test_payload,
             "timing": {
                 "total_training_time_sec": float(total_time),
-                "mean_epoch_time_sec": float(np.mean(epoch_times)) if len(epoch_times) > 0 else 0.0,
-                "max_epoch_time_sec": float(np.max(epoch_times)) if len(epoch_times) > 0 else 0.0,
+                "mean_epoch_time_seconds": float(np.mean(epoch_times)) if len(epoch_times) > 0 else 0.0,
+                "max_epoch_time_seconds": float(np.max(epoch_times)) if len(epoch_times) > 0 else 0.0,
             },
             "args": make_json_safe(vars(args)),
         }
