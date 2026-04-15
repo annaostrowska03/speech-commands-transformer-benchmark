@@ -1,0 +1,301 @@
+{
+  "model": "resnet18",
+  "experiment_name": "resnet18_full_dropout_p05",
+  "seeds": [
+    2026,
+    2137
+  ],
+  "num_runs": 2,
+  "aggregate": {
+    "best_validation": {
+      "acc": {
+        "mean": 0.9723325766174802,
+        "std": 0.0007094211123723215,
+        "min": 0.9716231555051078,
+        "max": 0.9730419977298524,
+        "n": 2
+      },
+      "loss": {
+        "mean": 0.11211997734247808,
+        "std": 0.008650080394327693,
+        "min": 0.1034698969481504,
+        "max": 0.12077005773680578,
+        "n": 2
+      },
+      "macro_precision": {
+        "mean": 0.9688921065849501,
+        "std": 0.002246323049226062,
+        "min": 0.9666457835357241,
+        "max": 0.9711384296341762,
+        "n": 2
+      },
+      "macro_recall": {
+        "mean": 0.9478940267239697,
+        "std": 0.0016093423921434424,
+        "min": 0.9462846843318262,
+        "max": 0.9495033691161131,
+        "n": 2
+      },
+      "macro_f1": {
+        "mean": 0.9579561842240953,
+        "std": 0.000347236610435786,
+        "min": 0.9576089476136596,
+        "max": 0.9583034208345311,
+        "n": 2
+      }
+    },
+    "test": {
+      "acc": {
+        "mean": 0.9753474762253109,
+        "std": 0.0005120702267739641,
+        "min": 0.9748354059985369,
+        "max": 0.9758595464520848,
+        "n": 2
+      },
+      "loss": {
+        "mean": 0.08968608594682113,
+        "std": 0.0033282122685456134,
+        "min": 0.08635787367827552,
+        "max": 0.09301429821536675,
+        "n": 2
+      },
+      "macro_precision": {
+        "mean": 0.974315036280913,
+        "std": 0.000812443010373809,
+        "min": 0.9735025932705391,
+        "max": 0.9751274792912867,
+        "n": 2
+      },
+      "macro_recall": {
+        "mean": 0.9508630181264841,
+        "std": 0.0019563678058023837,
+        "min": 0.9489066503206818,
+        "max": 0.9528193859322865,
+        "n": 2
+      },
+      "macro_f1": {
+        "mean": 0.9622506737908617,
+        "std": 0.000663747676863724,
+        "min": 0.961586926113998,
+        "max": 0.9629144214677254,
+        "n": 2
+      },
+      "inference_latency_ms": {
+        "mean": 1.439717739575964,
+        "std": 0.8920866349675922,
+        "min": 0.5476311046083718,
+        "max": 2.331804374543556,
+        "n": 2
+      }
+    },
+    "timing": {
+      "total_training_time_sec": {
+        "mean": 6114.122866272926,
+        "std": 4876.487396836281,
+        "min": 1237.6354694366455,
+        "max": 10990.610263109207,
+        "n": 2
+      },
+      "mean_epoch_time_seconds": {
+        "mean": 195.85124766743033,
+        "std": 145.52137569157304,
+        "min": 50.32987197585728,
+        "max": 341.3726233590034,
+        "n": 2
+      },
+      "max_epoch_time_seconds": {
+        "mean": 2320.267700791359,
+        "std": 1987.2933522462845,
+        "min": 332.97434854507446,
+        "max": 4307.561053037643,
+        "n": 2
+      }
+    },
+    "model_parameters": {
+      "total": {
+        "mean": 11176396.0,
+        "std": 0.0,
+        "min": 11176396.0,
+        "max": 11176396.0,
+        "n": 2
+      },
+      "trainable": {
+        "mean": 11176396.0,
+        "std": 0.0,
+        "min": 11176396.0,
+        "max": 11176396.0,
+        "n": 2
+      }
+    },
+    "unknown_silence_analysis": {
+      "unknown": {
+        "precision": {
+          "mean": 0.9760393333112474,
+          "std": 0.0013383213517257908,
+          "min": 0.9747010119595216,
+          "max": 0.9773776546629732,
+          "n": 2
+        },
+        "recall": {
+          "mean": 0.9925023430178069,
+          "std": 0.00046860356138711534,
+          "min": 0.9920337394564198,
+          "max": 0.992970946579194,
+          "n": 2
+        }
+      },
+      "silence": {
+        "precision": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "n": 2
+        },
+        "recall": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "n": 2
+        }
+      }
+    }
+  },
+  "per_seed_runs": [
+    {
+      "seed": 2026,
+      "experiment_name": "resnet18_full_dropout_p05_seed2026",
+      "run_output_dir": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2026",
+      "summary_path": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2026\\summary_seed2026.json",
+      "artifacts": {
+        "checkpoint": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2026\\best_model_seed2026.pt",
+        "history_csv": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2026\\history_seed2026.csv",
+        "summary_json": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2026\\summary_seed2026.json",
+        "config_yaml": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2026\\config_seed2026.yaml",
+        "confusion_matrix_json": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2026\\confusion_matrix_seed2026.json",
+        "confusion_matrix_png": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2026\\confusion_matrix_seed2026.png",
+        "error_analysis_json": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2026\\error_analysis_seed2026.json",
+        "unknown_detector_checkpoint": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2026\\unknown_detector_seed2026.pt",
+        "unknown_detector_summary_json": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2026\\unknown_detector_summary_seed2026.json"
+      },
+      "epochs": {
+        "configured": 40,
+        "ran": 23,
+        "early_stopped": true,
+        "best_epoch": 14
+      },
+      "best_validation": {
+        "acc": 0.9730419977298524,
+        "loss": 0.1034698969481504,
+        "macro_precision": 0.9666457835357241,
+        "macro_recall": 0.9495033691161131,
+        "macro_f1": 0.9576089476136596
+      },
+      "test": {
+        "loss": 0.08635787367827552,
+        "acc": 0.9758595464520848,
+        "macro_precision": 0.9735025932705391,
+        "macro_recall": 0.9528193859322865,
+        "macro_f1": 0.9629144214677254,
+        "inference_time_sec": 3.7430585999982213,
+        "inference_latency_ms": 0.5476311046083718,
+        "used_separate_unknown_detector": false
+      },
+      "timing": {
+        "total_training_time_sec": 1237.6354694366455,
+        "mean_epoch_time_seconds": 50.32987197585728,
+        "max_epoch_time_seconds": 332.97434854507446
+      },
+      "model_parameters": {
+        "total": 11176396,
+        "trainable": 11176396
+      },
+      "unknown_silence_analysis": {
+        "unknown": {
+          "precision": 0.9773776546629732,
+          "recall": 0.9920337394564198,
+          "support": 4268,
+          "predicted_total": 4332,
+          "most_confused_as": "go",
+          "most_common_source_as_prediction": "right"
+        },
+        "silence": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "support": 0,
+          "predicted_total": 0,
+          "most_confused_as": null,
+          "most_common_source_as_prediction": null
+        }
+      }
+    },
+    {
+      "seed": 2137,
+      "experiment_name": "resnet18_full_dropout_p05_seed2137",
+      "run_output_dir": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2137",
+      "summary_path": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2137\\summary_seed2137.json",
+      "artifacts": {
+        "checkpoint": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2137\\best_model_seed2137.pt",
+        "history_csv": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2137\\history_seed2137.csv",
+        "summary_json": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2137\\summary_seed2137.json",
+        "config_yaml": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2137\\config_seed2137.yaml",
+        "confusion_matrix_json": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2137\\confusion_matrix_seed2137.json",
+        "confusion_matrix_png": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2137\\confusion_matrix_seed2137.png",
+        "error_analysis_json": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2137\\error_analysis_seed2137.json",
+        "unknown_detector_checkpoint": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2137\\unknown_detector_seed2137.pt",
+        "unknown_detector_summary_json": "outputs\\resnet18\\resnet18_full_dropout_p05_seed2137\\unknown_detector_summary_seed2137.json"
+      },
+      "epochs": {
+        "configured": 40,
+        "ran": 31,
+        "early_stopped": true,
+        "best_epoch": 22
+      },
+      "best_validation": {
+        "acc": 0.9716231555051078,
+        "loss": 0.12077005773680578,
+        "macro_precision": 0.9711384296341762,
+        "macro_recall": 0.9462846843318262,
+        "macro_f1": 0.9583034208345311
+      },
+      "test": {
+        "loss": 0.09301429821536675,
+        "acc": 0.9748354059985369,
+        "macro_precision": 0.9751274792912867,
+        "macro_recall": 0.9489066503206818,
+        "macro_f1": 0.961586926113998,
+        "inference_time_sec": 15.937882900005206,
+        "inference_latency_ms": 2.331804374543556,
+        "used_separate_unknown_detector": false
+      },
+      "timing": {
+        "total_training_time_sec": 10990.610263109207,
+        "mean_epoch_time_seconds": 341.3726233590034,
+        "max_epoch_time_seconds": 4307.561053037643
+      },
+      "model_parameters": {
+        "total": 11176396,
+        "trainable": 11176396
+      },
+      "unknown_silence_analysis": {
+        "unknown": {
+          "precision": 0.9747010119595216,
+          "recall": 0.992970946579194,
+          "support": 4268,
+          "predicted_total": 4348,
+          "most_confused_as": "on",
+          "most_common_source_as_prediction": "right"
+        },
+        "silence": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "support": 0,
+          "predicted_total": 0,
+          "most_confused_as": null,
+          "most_common_source_as_prediction": null
+        }
+      }
+    }
+  ]
+}
