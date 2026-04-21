@@ -1,0 +1,137 @@
+{
+  "run_id": "c6fe821610bf49dc86603f2d60c2d180",
+  "model_name": "resnet18",
+  "optimizer": "adam",
+  "learning_rate": 0.001,
+  "dropout": 0.1,
+  "batch_size": 64,
+  "device": "cuda",
+  "model_parameters": {
+    "total": 11176396,
+    "trainable": 11176396
+  },
+  "model": "resnet18",
+  "experiment_name": "resnet18_full_balancing_loss_seed42",
+  "seed": 42,
+  "device_name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+  "best_epoch": 20,
+  "val_accuracy_best_epoch": 0.9572928490351873,
+  "test_accuracy": 0.9607900512070227,
+  "test_f1_macro": 0.9417483756254103,
+  "training_time_seconds": 4274.230281114578,
+  "inference_latency_ms": 1.0818499341592105,
+  "run_output_dir": "outputs\\resnet18\\resnet18_full_balancing_loss_seed42",
+  "artifacts": {
+    "checkpoint": "outputs\\resnet18\\resnet18_full_balancing_loss_seed42\\best_model_seed42.pt",
+    "history_csv": "outputs\\resnet18\\resnet18_full_balancing_loss_seed42\\history_seed42.csv",
+    "summary_json": "outputs\\resnet18\\resnet18_full_balancing_loss_seed42\\summary_seed42.json",
+    "config_yaml": "outputs\\resnet18\\resnet18_full_balancing_loss_seed42\\config_seed42.yaml",
+    "confusion_matrix_json": "outputs\\resnet18\\resnet18_full_balancing_loss_seed42\\confusion_matrix_seed42.json",
+    "confusion_matrix_png": "outputs\\resnet18\\resnet18_full_balancing_loss_seed42\\confusion_matrix_seed42.png",
+    "error_analysis_json": "outputs\\resnet18\\resnet18_full_balancing_loss_seed42\\error_analysis_seed42.json",
+    "unknown_detector_checkpoint": "outputs\\resnet18\\resnet18_full_balancing_loss_seed42\\unknown_detector_seed42.pt",
+    "unknown_detector_summary_json": "outputs\\resnet18\\resnet18_full_balancing_loss_seed42\\unknown_detector_summary_seed42.json"
+  },
+  "dataset_sizes": {
+    "train": 53388,
+    "val": 7048,
+    "test": 6835
+  },
+  "epochs": {
+    "configured": 40,
+    "ran": 29,
+    "early_stopped": true,
+    "best_epoch": 20
+  },
+  "best_validation": {
+    "acc": 0.9572928490351873,
+    "loss": 0.13987762215461208,
+    "macro_precision": 0.9217264069044928,
+    "macro_recall": 0.9586752209637884,
+    "macro_f1": 0.9389347618788285
+  },
+  "test": {
+    "loss": 0.14373088505666842,
+    "acc": 0.9607900512070227,
+    "macro_precision": 0.9270651575083768,
+    "macro_recall": 0.9598615645278639,
+    "macro_f1": 0.9417483756254103,
+    "inference_time_sec": 7.394444299978204,
+    "inference_latency_ms": 1.0818499341592105,
+    "used_separate_unknown_detector": false
+  },
+  "unknown_silence_analysis": {
+    "unknown": {
+      "precision": 0.9910628019323672,
+      "recall": 0.961340206185567,
+      "support": 4268,
+      "predicted_total": 4140,
+      "most_confused_as": "right",
+      "most_common_source_as_prediction": "on"
+    },
+    "silence": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "support": 0,
+      "predicted_total": 0,
+      "most_confused_as": null,
+      "most_common_source_as_prediction": null
+    }
+  },
+  "separate_unknown_detector": {
+    "enabled": false,
+    "threshold": 0.5,
+    "summary": null
+  },
+  "timing": {
+    "total_training_time_sec": 4274.230281114578,
+    "mean_epoch_time_seconds": 140.84146631997208,
+    "max_epoch_time_seconds": 560.5113208293915
+  },
+  "args": {
+    "config": ".\\configs\\resnet18_full_balancing_loss.yaml",
+    "data_path": "./data/train",
+    "experiment_name": "resnet18_full_balancing_loss_seed42",
+    "model": "resnet18",
+    "lr": 0.001,
+    "batch_size": 64,
+    "epochs": 40,
+    "patience": 8,
+    "optimizer": "adam",
+    "momentum": 0.9,
+    "weight_decay": 0.0001,
+    "dropout": 0.1,
+    "n_mels": 64,
+    "seeds": [
+      42,
+      123,
+      2026,
+      2137
+    ],
+    "num_workers": 4,
+    "freeze_backbone": false,
+    "use_pretrained": true,
+    "use_augment": false,
+    "augment": null,
+    "time_mask": 30,
+    "freq_mask": 12,
+    "use_weighted_loss": true,
+    "use_unknown_undersampling": false,
+    "unknown_keep_prob": 1.0,
+    "use_separate_unknown_detector": false,
+    "unknown_detector_model": null,
+    "unknown_detector_epochs": 8,
+    "unknown_detector_lr": null,
+    "unknown_detector_dropout": null,
+    "unknown_detector_threshold": 0.5,
+    "balancing": "loss",
+    "silence_train_samples": 2300,
+    "silence_eval_samples": 250,
+    "include_silence_in_test": false,
+    "silence_test_samples": 250,
+    "run_test": true,
+    "checkpoint_path": "best_model.pt",
+    "disable_mlflow": false,
+    "seed": 42
+  }
+}
