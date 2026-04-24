@@ -1,0 +1,137 @@
+{
+  "run_id": "4a4fd1ddf94f4da587bdf23a286a2316",
+  "model_name": "mobilenetv2",
+  "optimizer": "adam",
+  "learning_rate": 0.001,
+  "dropout": 0.2,
+  "batch_size": 96,
+  "device": "cuda",
+  "model_parameters": {
+    "total": 2238668,
+    "trainable": 2238668
+  },
+  "model": "mobilenetv2",
+  "experiment_name": "mobilenetv2_full_specaugment_seed2026",
+  "seed": 2026,
+  "device_name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+  "best_epoch": 15,
+  "val_accuracy_best_epoch": 0.9723325766174802,
+  "test_accuracy": 0.9777615215801024,
+  "test_f1_macro": 0.9661993117309947,
+  "training_time_seconds": 5651.599219083786,
+  "inference_latency_ms": 1.6051929040410675,
+  "run_output_dir": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026",
+  "artifacts": {
+    "checkpoint": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\best_model_seed2026.pt",
+    "history_csv": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\history_seed2026.csv",
+    "summary_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\summary_seed2026.json",
+    "config_yaml": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\config_seed2026.yaml",
+    "confusion_matrix_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\confusion_matrix_seed2026.json",
+    "confusion_matrix_png": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\confusion_matrix_seed2026.png",
+    "error_analysis_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\error_analysis_seed2026.json",
+    "unknown_detector_checkpoint": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\unknown_detector_seed2026.pt",
+    "unknown_detector_summary_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\unknown_detector_summary_seed2026.json"
+  },
+  "dataset_sizes": {
+    "train": 53388,
+    "val": 7048,
+    "test": 6835
+  },
+  "epochs": {
+    "configured": 40,
+    "ran": 24,
+    "early_stopped": true,
+    "best_epoch": 15
+  },
+  "best_validation": {
+    "acc": 0.9723325766174802,
+    "loss": 0.0898218596409124,
+    "macro_precision": 0.9677144828186198,
+    "macro_recall": 0.9466130786145913,
+    "macro_f1": 0.9568720539077774
+  },
+  "test": {
+    "loss": 0.07109020134725909,
+    "acc": 0.9777615215801024,
+    "macro_precision": 0.9782987712610275,
+    "macro_recall": 0.9547046147308683,
+    "macro_f1": 0.9661993117309947,
+    "inference_time_sec": 10.971493499120697,
+    "inference_latency_ms": 1.6051929040410675,
+    "used_separate_unknown_detector": false
+  },
+  "unknown_silence_analysis": {
+    "unknown": {
+      "precision": 0.9774193548387097,
+      "recall": 0.9939081537019682,
+      "support": 4268,
+      "predicted_total": 4340,
+      "most_confused_as": "go",
+      "most_common_source_as_prediction": "right"
+    },
+    "silence": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "support": 0,
+      "predicted_total": 0,
+      "most_confused_as": null,
+      "most_common_source_as_prediction": null
+    }
+  },
+  "separate_unknown_detector": {
+    "enabled": false,
+    "threshold": 0.5,
+    "summary": null
+  },
+  "timing": {
+    "total_training_time_sec": 5651.599219083786,
+    "mean_epoch_time_seconds": 228.72166762749353,
+    "max_epoch_time_seconds": 456.3760459423065
+  },
+  "args": {
+    "config": ".\\configs\\mobilenetv2_full_specaugment.yaml",
+    "data_path": "./data/train",
+    "experiment_name": "mobilenetv2_full_specaugment_seed2026",
+    "model": "mobilenetv2",
+    "lr": 0.001,
+    "batch_size": 96,
+    "epochs": 40,
+    "patience": 8,
+    "optimizer": "adam",
+    "momentum": 0.9,
+    "weight_decay": 0.0001,
+    "dropout": 0.2,
+    "n_mels": 64,
+    "seeds": [
+      42,
+      123,
+      2026,
+      2137
+    ],
+    "num_workers": 4,
+    "freeze_backbone": false,
+    "use_pretrained": true,
+    "use_augment": true,
+    "augment": null,
+    "time_mask": 30,
+    "freq_mask": 12,
+    "use_weighted_loss": false,
+    "use_unknown_undersampling": false,
+    "unknown_keep_prob": 1.0,
+    "use_separate_unknown_detector": false,
+    "unknown_detector_model": null,
+    "unknown_detector_epochs": 8,
+    "unknown_detector_lr": null,
+    "unknown_detector_dropout": null,
+    "unknown_detector_threshold": 0.5,
+    "balancing": "none",
+    "silence_train_samples": 2300,
+    "silence_eval_samples": 250,
+    "include_silence_in_test": false,
+    "silence_test_samples": 250,
+    "run_test": true,
+    "checkpoint_path": "best_model.pt",
+    "disable_mlflow": false,
+    "seed": 2026
+  }
+}

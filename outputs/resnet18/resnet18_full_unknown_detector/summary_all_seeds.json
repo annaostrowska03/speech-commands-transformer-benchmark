@@ -1,0 +1,469 @@
+{
+  "model": "resnet18",
+  "experiment_name": "resnet18_full_unknown_detector",
+  "seeds": [
+    42,
+    123,
+    2026,
+    2137
+  ],
+  "num_runs": 4,
+  "aggregate": {
+    "best_validation": {
+      "acc": {
+        "mean": 0.9694239500567536,
+        "std": 0.0009001544793168045,
+        "min": 0.9686435868331441,
+        "max": 0.9709137343927355,
+        "n": 4
+      },
+      "loss": {
+        "mean": 0.1141506690071919,
+        "std": 0.0032197242247173096,
+        "min": 0.10922504909265499,
+        "max": 0.11780360452789829,
+        "n": 4
+      },
+      "macro_precision": {
+        "mean": 0.9663462340800183,
+        "std": 0.0024919875386106233,
+        "min": 0.9632443385551513,
+        "max": 0.9692601741138178,
+        "n": 4
+      },
+      "macro_recall": {
+        "mean": 0.9413228801241017,
+        "std": 0.003893663296514492,
+        "min": 0.9368109267120897,
+        "max": 0.9473669195794883,
+        "n": 4
+      },
+      "macro_f1": {
+        "mean": 0.9532223914493883,
+        "std": 0.0010387047755263557,
+        "min": 0.9524361164359566,
+        "max": 0.9549799815054008,
+        "n": 4
+      }
+    },
+    "test": {
+      "acc": {
+        "mean": 0.9684711046086321,
+        "std": 0.0015292278683516536,
+        "min": 0.9664959765910753,
+        "max": 0.9707388441843453,
+        "n": 4
+      },
+      "loss": {
+        "mean": 0.10353114783304695,
+        "std": 0.0017614151260554433,
+        "min": 0.10181832602213531,
+        "max": 0.10610431682130413,
+        "n": 4
+      },
+      "macro_precision": {
+        "mean": 0.9773261447191456,
+        "std": 0.0022006134623993004,
+        "min": 0.974789699454099,
+        "max": 0.98048185267439,
+        "n": 4
+      },
+      "macro_recall": {
+        "mean": 0.9276832348946541,
+        "std": 0.004613442208491393,
+        "min": 0.9215822061542049,
+        "max": 0.9331669804178049,
+        "n": 4
+      },
+      "macro_f1": {
+        "mean": 0.9511181122297987,
+        "std": 0.0033373265152313496,
+        "min": 0.9465075398223637,
+        "max": 0.9556317844503192,
+        "n": 4
+      },
+      "inference_latency_ms": {
+        "mean": 2.583913869754532,
+        "std": 0.5685089755726896,
+        "min": 1.9981669202098116,
+        "max": 3.3337596635114135,
+        "n": 4
+      }
+    },
+    "timing": {
+      "total_training_time_sec": {
+        "mean": 5026.443756699562,
+        "std": 629.4474500045404,
+        "min": 4054.624617099762,
+        "max": 5710.655937671661,
+        "n": 4
+      },
+      "mean_epoch_time_seconds": {
+        "mean": 117.39010303433425,
+        "std": 17.199563087817022,
+        "min": 92.1211121612125,
+        "max": 137.68721556663513,
+        "n": 4
+      },
+      "max_epoch_time_seconds": {
+        "mean": 301.7647144794464,
+        "std": 24.81023783438479,
+        "min": 270.38382029533386,
+        "max": 336.76064896583557,
+        "n": 4
+      }
+    },
+    "model_parameters": {
+      "total": {
+        "mean": 11176396.0,
+        "std": 0.0,
+        "min": 11176396.0,
+        "max": 11176396.0,
+        "n": 4
+      },
+      "trainable": {
+        "mean": 11176396.0,
+        "std": 0.0,
+        "min": 11176396.0,
+        "max": 11176396.0,
+        "n": 4
+      }
+    },
+    "unknown_silence_analysis": {
+      "unknown": {
+        "precision": {
+          "mean": 0.9631103056109829,
+          "std": 0.0012982724230488217,
+          "min": 0.9616166177466696,
+          "max": 0.9646418857660924,
+          "n": 4
+        },
+        "recall": {
+          "mean": 0.9970126522961575,
+          "std": 0.001152314642274237,
+          "min": 0.9950796626054358,
+          "max": 0.9978912839737581,
+          "n": 4
+        }
+      },
+      "silence": {
+        "precision": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "n": 4
+        },
+        "recall": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "n": 4
+        }
+      }
+    }
+  },
+  "per_seed_runs": [
+    {
+      "seed": 42,
+      "experiment_name": "resnet18_full_unknown_detector_seed42",
+      "run_output_dir": "outputs\\resnet18\\resnet18_full_unknown_detector_seed42",
+      "summary_path": "outputs\\resnet18\\resnet18_full_unknown_detector_seed42\\summary_seed42.json",
+      "artifacts": {
+        "checkpoint": "outputs\\resnet18\\resnet18_full_unknown_detector_seed42\\best_model_seed42.pt",
+        "history_csv": "outputs\\resnet18\\resnet18_full_unknown_detector_seed42\\history_seed42.csv",
+        "summary_json": "outputs\\resnet18\\resnet18_full_unknown_detector_seed42\\summary_seed42.json",
+        "config_yaml": "outputs\\resnet18\\resnet18_full_unknown_detector_seed42\\config_seed42.yaml",
+        "confusion_matrix_json": "outputs\\resnet18\\resnet18_full_unknown_detector_seed42\\confusion_matrix_seed42.json",
+        "confusion_matrix_png": "outputs\\resnet18\\resnet18_full_unknown_detector_seed42\\confusion_matrix_seed42.png",
+        "error_analysis_json": "outputs\\resnet18\\resnet18_full_unknown_detector_seed42\\error_analysis_seed42.json",
+        "unknown_detector_checkpoint": "outputs\\resnet18\\resnet18_full_unknown_detector_seed42\\unknown_detector_seed42.pt",
+        "unknown_detector_summary_json": "outputs\\resnet18\\resnet18_full_unknown_detector_seed42\\unknown_detector_summary_seed42.json"
+      },
+      "epochs": {
+        "configured": 40,
+        "ran": 27,
+        "early_stopped": true,
+        "best_epoch": 18
+      },
+      "best_validation": {
+        "acc": 0.9686435868331441,
+        "loss": 0.1160221152662928,
+        "macro_precision": 0.9692601741138178,
+        "macro_recall": 0.9368109267120897,
+        "macro_f1": 0.9524361164359566
+      },
+      "test": {
+        "loss": 0.10198623724527052,
+        "acc": 0.9707388441843453,
+        "macro_precision": 0.98048185267439,
+        "macro_recall": 0.9331669804178049,
+        "macro_f1": 0.9556317844503192,
+        "inference_time_sec": 13.657470899634063,
+        "inference_latency_ms": 1.9981669202098116,
+        "used_separate_unknown_detector": true,
+        "unknown_detector_precision": 0.9804659919981172,
+        "unknown_detector_recall": 0.9761012183692596,
+        "unknown_detector_f1": 0.9782787366443584,
+        "unknown_detector_acc": 0.9729334308705194,
+        "unknown_detector_threshold": 0.5,
+        "unknown_detector_positive_rate": 0.6216532553035845,
+        "overridden_to_unknown_count": 33,
+        "overridden_to_unknown_rate": 0.004828090709583029
+      },
+      "timing": {
+        "total_training_time_sec": 4054.624617099762,
+        "mean_epoch_time_seconds": 92.1211121612125,
+        "max_epoch_time_seconds": 311.05181908607483
+      },
+      "model_parameters": {
+        "total": 11176396,
+        "trainable": 11176396
+      },
+      "unknown_silence_analysis": {
+        "unknown": {
+          "precision": 0.9646418857660924,
+          "recall": 0.9971883786316776,
+          "support": 4268,
+          "predicted_total": 4412,
+          "most_confused_as": "go",
+          "most_common_source_as_prediction": "right"
+        },
+        "silence": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "support": 0,
+          "predicted_total": 0,
+          "most_confused_as": null,
+          "most_common_source_as_prediction": null
+        }
+      }
+    },
+    {
+      "seed": 123,
+      "experiment_name": "resnet18_full_unknown_detector_seed123",
+      "run_output_dir": "outputs\\resnet18\\resnet18_full_unknown_detector_seed123",
+      "summary_path": "outputs\\resnet18\\resnet18_full_unknown_detector_seed123\\summary_seed123.json",
+      "artifacts": {
+        "checkpoint": "outputs\\resnet18\\resnet18_full_unknown_detector_seed123\\best_model_seed123.pt",
+        "history_csv": "outputs\\resnet18\\resnet18_full_unknown_detector_seed123\\history_seed123.csv",
+        "summary_json": "outputs\\resnet18\\resnet18_full_unknown_detector_seed123\\summary_seed123.json",
+        "config_yaml": "outputs\\resnet18\\resnet18_full_unknown_detector_seed123\\config_seed123.yaml",
+        "confusion_matrix_json": "outputs\\resnet18\\resnet18_full_unknown_detector_seed123\\confusion_matrix_seed123.json",
+        "confusion_matrix_png": "outputs\\resnet18\\resnet18_full_unknown_detector_seed123\\confusion_matrix_seed123.png",
+        "error_analysis_json": "outputs\\resnet18\\resnet18_full_unknown_detector_seed123\\error_analysis_seed123.json",
+        "unknown_detector_checkpoint": "outputs\\resnet18\\resnet18_full_unknown_detector_seed123\\unknown_detector_seed123.pt",
+        "unknown_detector_summary_json": "outputs\\resnet18\\resnet18_full_unknown_detector_seed123\\unknown_detector_summary_seed123.json"
+      },
+      "epochs": {
+        "configured": 40,
+        "ran": 22,
+        "early_stopped": true,
+        "best_epoch": 13
+      },
+      "best_validation": {
+        "acc": 0.9709137343927355,
+        "loss": 0.11355190714192151,
+        "macro_precision": 0.9632443385551513,
+        "macro_recall": 0.9473669195794883,
+        "macro_f1": 0.9549799815054008
+      },
+      "test": {
+        "loss": 0.10181832602213531,
+        "acc": 0.9686905632772495,
+        "macro_precision": 0.975836045665368,
+        "macro_recall": 0.9309626390404911,
+        "macro_f1": 0.9523739734826075,
+        "inference_time_sec": 14.144639799837023,
+        "inference_latency_ms": 2.069442545696712,
+        "used_separate_unknown_detector": true,
+        "unknown_detector_precision": 0.9711316397228638,
+        "unknown_detector_recall": 0.9852389878163074,
+        "unknown_detector_f1": 0.9781344498720632,
+        "unknown_detector_acc": 0.9724945135332845,
+        "unknown_detector_threshold": 0.5,
+        "unknown_detector_positive_rate": 0.6335040234089246,
+        "overridden_to_unknown_count": 76,
+        "overridden_to_unknown_rate": 0.011119239209948792
+      },
+      "timing": {
+        "total_training_time_sec": 5426.058435201645,
+        "mean_epoch_time_seconds": 137.68721556663513,
+        "max_epoch_time_seconds": 288.8625695705414
+      },
+      "model_parameters": {
+        "total": 11176396,
+        "trainable": 11176396
+      },
+      "unknown_silence_analysis": {
+        "unknown": {
+          "precision": 0.9641316685584563,
+          "recall": 0.9950796626054358,
+          "support": 4268,
+          "predicted_total": 4405,
+          "most_confused_as": "down",
+          "most_common_source_as_prediction": "right"
+        },
+        "silence": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "support": 0,
+          "predicted_total": 0,
+          "most_confused_as": null,
+          "most_common_source_as_prediction": null
+        }
+      }
+    },
+    {
+      "seed": 2026,
+      "experiment_name": "resnet18_full_unknown_detector_seed2026",
+      "run_output_dir": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2026",
+      "summary_path": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2026\\summary_seed2026.json",
+      "artifacts": {
+        "checkpoint": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2026\\best_model_seed2026.pt",
+        "history_csv": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2026\\history_seed2026.csv",
+        "summary_json": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2026\\summary_seed2026.json",
+        "config_yaml": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2026\\config_seed2026.yaml",
+        "confusion_matrix_json": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2026\\confusion_matrix_seed2026.json",
+        "confusion_matrix_png": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2026\\confusion_matrix_seed2026.png",
+        "error_analysis_json": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2026\\error_analysis_seed2026.json",
+        "unknown_detector_checkpoint": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2026\\unknown_detector_seed2026.pt",
+        "unknown_detector_summary_json": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2026\\unknown_detector_summary_seed2026.json"
+      },
+      "epochs": {
+        "configured": 40,
+        "ran": 17,
+        "early_stopped": true,
+        "best_epoch": 8
+      },
+      "best_validation": {
+        "acc": 0.9693530079455165,
+        "loss": 0.10922504909265499,
+        "macro_precision": 0.9646086084884069,
+        "macro_recall": 0.9416927673630178,
+        "macro_f1": 0.9524754364107998
+      },
+      "test": {
+        "loss": 0.1042157112434779,
+        "acc": 0.9664959765910753,
+        "macro_precision": 0.974789699454099,
+        "macro_recall": 0.9215822061542049,
+        "macro_f1": 0.9465075398223637,
+        "inference_time_sec": 22.786247300100513,
+        "inference_latency_ms": 3.3337596635114135,
+        "used_separate_unknown_detector": true,
+        "unknown_detector_precision": 0.9728110599078341,
+        "unknown_detector_recall": 0.9892221180880975,
+        "unknown_detector_f1": 0.9809479553903345,
+        "unknown_detector_acc": 0.9760058522311631,
+        "unknown_detector_threshold": 0.5,
+        "unknown_detector_positive_rate": 0.6349670811997074,
+        "overridden_to_unknown_count": 70,
+        "overridden_to_unknown_rate": 0.010241404535479151
+      },
+      "timing": {
+        "total_training_time_sec": 4914.43603682518,
+        "mean_epoch_time_seconds": 112.11571303535911,
+        "max_epoch_time_seconds": 336.76064896583557
+      },
+      "model_parameters": {
+        "total": 11176396,
+        "trainable": 11176396
+      },
+      "unknown_silence_analysis": {
+        "unknown": {
+          "precision": 0.9616166177466696,
+          "recall": 0.9978912839737581,
+          "support": 4268,
+          "predicted_total": 4429,
+          "most_confused_as": "go",
+          "most_common_source_as_prediction": "right"
+        },
+        "silence": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "support": 0,
+          "predicted_total": 0,
+          "most_confused_as": null,
+          "most_common_source_as_prediction": null
+        }
+      }
+    },
+    {
+      "seed": 2137,
+      "experiment_name": "resnet18_full_unknown_detector_seed2137",
+      "run_output_dir": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2137",
+      "summary_path": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2137\\summary_seed2137.json",
+      "artifacts": {
+        "checkpoint": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2137\\best_model_seed2137.pt",
+        "history_csv": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2137\\history_seed2137.csv",
+        "summary_json": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2137\\summary_seed2137.json",
+        "config_yaml": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2137\\config_seed2137.yaml",
+        "confusion_matrix_json": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2137\\confusion_matrix_seed2137.json",
+        "confusion_matrix_png": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2137\\confusion_matrix_seed2137.png",
+        "error_analysis_json": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2137\\error_analysis_seed2137.json",
+        "unknown_detector_checkpoint": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2137\\unknown_detector_seed2137.pt",
+        "unknown_detector_summary_json": "outputs\\resnet18\\resnet18_full_unknown_detector_seed2137\\unknown_detector_summary_seed2137.json"
+      },
+      "epochs": {
+        "configured": 40,
+        "ran": 15,
+        "early_stopped": true,
+        "best_epoch": 6
+      },
+      "best_validation": {
+        "acc": 0.9687854710556186,
+        "loss": 0.11780360452789829,
+        "macro_precision": 0.9682718151626971,
+        "macro_recall": 0.9394209068418112,
+        "macro_f1": 0.9529980314453961
+      },
+      "test": {
+        "loss": 0.10610431682130413,
+        "acc": 0.967959034381858,
+        "macro_precision": 0.9781969810827253,
+        "macro_recall": 0.9250211139661154,
+        "macro_f1": 0.9499591511639043,
+        "inference_time_sec": 20.055847199517302,
+        "inference_latency_ms": 2.9342863496001907,
+        "used_separate_unknown_detector": true,
+        "unknown_detector_precision": 0.9783014465702287,
+        "unknown_detector_recall": 0.982427366447985,
+        "unknown_detector_f1": 0.9803600654664485,
+        "unknown_detector_acc": 0.9754206291148501,
+        "unknown_detector_threshold": 0.5,
+        "unknown_detector_positive_rate": 0.6270665691294807,
+        "overridden_to_unknown_count": 66,
+        "overridden_to_unknown_rate": 0.009656181419166058
+      },
+      "timing": {
+        "total_training_time_sec": 5710.655937671661,
+        "mean_epoch_time_seconds": 127.63637137413025,
+        "max_epoch_time_seconds": 270.38382029533386
+      },
+      "model_parameters": {
+        "total": 11176396,
+        "trainable": 11176396
+      },
+      "unknown_silence_analysis": {
+        "unknown": {
+          "precision": 0.9620510503727129,
+          "recall": 0.9978912839737581,
+          "support": 4268,
+          "predicted_total": 4427,
+          "most_confused_as": "on",
+          "most_common_source_as_prediction": "right"
+        },
+        "silence": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "support": 0,
+          "predicted_total": 0,
+          "most_confused_as": null,
+          "most_common_source_as_prediction": null
+        }
+      }
+    }
+  ]
+}

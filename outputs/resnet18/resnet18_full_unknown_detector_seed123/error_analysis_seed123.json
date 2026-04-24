@@ -1,0 +1,112 @@
+{
+  "unknown_silence_analysis": {
+    "unknown": {
+      "precision": 0.9641316685584563,
+      "recall": 0.9950796626054358,
+      "support": 4268,
+      "predicted_total": 4405,
+      "most_confused_as": "down",
+      "most_common_source_as_prediction": "right"
+    },
+    "silence": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "support": 0,
+      "predicted_total": 0,
+      "most_confused_as": null,
+      "most_common_source_as_prediction": null
+    }
+  },
+  "top_confusions": [
+    {
+      "true_class": "right",
+      "predicted_as": "unknown",
+      "count": 33,
+      "rate_within_true": 0.1274131274131274
+    },
+    {
+      "true_class": "go",
+      "predicted_as": "unknown",
+      "count": 25,
+      "rate_within_true": 0.099601593625498
+    },
+    {
+      "true_class": "down",
+      "predicted_as": "unknown",
+      "count": 18,
+      "rate_within_true": 0.07114624505928854
+    },
+    {
+      "true_class": "on",
+      "predicted_as": "unknown",
+      "count": 18,
+      "rate_within_true": 0.07317073170731707
+    },
+    {
+      "true_class": "no",
+      "predicted_as": "unknown",
+      "count": 13,
+      "rate_within_true": 0.051587301587301584
+    },
+    {
+      "true_class": "off",
+      "predicted_as": "unknown",
+      "count": 12,
+      "rate_within_true": 0.04580152671755725
+    },
+    {
+      "true_class": "yes",
+      "predicted_as": "unknown",
+      "count": 11,
+      "rate_within_true": 0.04296875
+    },
+    {
+      "true_class": "up",
+      "predicted_as": "unknown",
+      "count": 11,
+      "rate_within_true": 0.04044117647058824
+    },
+    {
+      "true_class": "left",
+      "predicted_as": "unknown",
+      "count": 11,
+      "rate_within_true": 0.04119850187265917
+    },
+    {
+      "true_class": "down",
+      "predicted_as": "no",
+      "count": 10,
+      "rate_within_true": 0.039525691699604744
+    },
+    {
+      "true_class": "stop",
+      "predicted_as": "unknown",
+      "count": 6,
+      "rate_within_true": 0.024096385542168676
+    },
+    {
+      "true_class": "go",
+      "predicted_as": "no",
+      "count": 6,
+      "rate_within_true": 0.02390438247011952
+    },
+    {
+      "true_class": "unknown",
+      "predicted_as": "down",
+      "count": 5,
+      "rate_within_true": 0.0011715089034676663
+    },
+    {
+      "true_class": "unknown",
+      "predicted_as": "on",
+      "count": 5,
+      "rate_within_true": 0.0011715089034676663
+    },
+    {
+      "true_class": "unknown",
+      "predicted_as": "off",
+      "count": 4,
+      "rate_within_true": 0.0009372071227741331
+    }
+  ]
+}

@@ -119,6 +119,7 @@ Optional full-experiment configs (additional ablations + MobileNetV2):
 - `configs/mobilenetv2_full_specaugment.yaml`
 - `configs/resnet18_full_batch32.yaml`
 - `configs/resnet18_full_lr0003.yaml`
+- `configs/resnet18_full_unknown_detector.yaml`
 
 Run optional full configs:
 
@@ -137,6 +138,8 @@ Per-seed files saved inside each run directory:
 - `confusion_matrix_seed{seed}.json` (raw + normalized confusion matrix, per-class metrics)
 - `confusion_matrix_seed{seed}.png` (row-normalized confusion matrix plot)
 - `error_analysis_seed{seed}.json` (top confusions + `unknown`/`silence` focused diagnostics)
+- `unknown_detector_seed{seed}.pt` (separate binary unknown detector checkpoint, if enabled)
+- `unknown_detector_summary_seed{seed}.json` (metrics/params for separate unknown detector, if enabled)
 
 When running multiple seeds, an aggregate file is also generated:
 - `outputs/{model}/{base_experiment_name}/summary_all_seeds.json` (mean/std/min/max across seeds + per-seed artifact index)
@@ -165,6 +168,7 @@ python src/train.py --config configs/resnet18_smoke_baseline.yaml
 Optional smoke configs:
 - `configs/mobilenetv2_smoke_baseline.yaml`
 - `configs/mobilenetv2_smoke_specaugment.yaml`
+- `configs/resnet18_smoke_unknown_detector.yaml`
 
 Run optional smoke configs:
 
@@ -186,6 +190,47 @@ python src/train.py --epochs 10 --balancing loss+undersample --unknown_keep_prob
 
 The script reports accuracy and macro metrics (`macro_precision`, `macro_recall`, `macro_f1`) for validation,
 and for test if `--run_test` is enabled.
+
+### Test split variants: with and without synthetic silence
+
+By default, test split follows the official list only (no synthetic `silence`).
+You can optionally add synthetic silence generated from `_background_noise_`:
+
+```bash
+python src/train.py --config configs/resnet18_full_baseline.yaml --run_test --include_silence_in_test --silence_test_samples 250
+```
+
+This lets you keep backward-compatible results and also report an alternative 12-class test setup.
+
+### Evaluate already-trained checkpoints (no retraining)
+
+Use a saved checkpoint and (optionally) saved run config to re-run test evaluation later:
+
+```bash
+python src/evaluate_checkpoint.py --config outputs/resnet18/resnet18_full_baseline_seed42/config_seed42.yaml --checkpoint_path outputs/resnet18/resnet18_full_baseline_seed42/best_model_seed42.pt
+```
+
+Compare both test approaches in one command:
+
+```bash
+python src/evaluate_checkpoint.py --config outputs/resnet18/resnet18_full_baseline_seed42/config_seed42.yaml --checkpoint_path outputs/resnet18/resnet18_full_baseline_seed42/best_model_seed42.pt --compare_silence_modes --output_json outputs/analysis/eval_seed42_compare_silence.json
+```
+
+### Separate Unknown Detector (optional)
+
+Enable a second binary network for `unknown` vs `non-unknown` and use it to override the final class prediction:
+
+```bash
+python src/train.py --config configs/resnet18_full_baseline.yaml --use_separate_unknown_detector --unknown_detector_threshold 0.5
+```
+
+Key flags:
+- `--use_separate_unknown_detector`
+- `--unknown_detector_model` (defaults to main model)
+- `--unknown_detector_epochs` (default: 8)
+- `--unknown_detector_lr` (defaults to `--lr`)
+- `--unknown_detector_dropout` (defaults to `--dropout`)
+- `--unknown_detector_threshold` (default: 0.5)
 
 ### Reproducibility checklist
 

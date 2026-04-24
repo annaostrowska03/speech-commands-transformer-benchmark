@@ -1,0 +1,437 @@
+{
+  "model": "mobilenetv2",
+  "experiment_name": "mobilenetv2_full_specaugment",
+  "seeds": [
+    42,
+    123,
+    2026,
+    2137
+  ],
+  "num_runs": 4,
+  "aggregate": {
+    "best_validation": {
+      "acc": {
+        "mean": 0.9726163450624291,
+        "std": 0.0008571967915433178,
+        "min": 0.9713393870601589,
+        "max": 0.9734676503972758,
+        "n": 4
+      },
+      "loss": {
+        "mean": 0.09431945393419382,
+        "std": 0.0034373865488151376,
+        "min": 0.0898218596409124,
+        "max": 0.09939313724052402,
+        "n": 4
+      },
+      "macro_precision": {
+        "mean": 0.9687416526884025,
+        "std": 0.0019400102693740168,
+        "min": 0.9661126844517297,
+        "max": 0.9710193518804915,
+        "n": 4
+      },
+      "macro_recall": {
+        "mean": 0.9475033267118598,
+        "std": 0.0024445800611698344,
+        "min": 0.9444304627651486,
+        "max": 0.9511901281202414,
+        "n": 4
+      },
+      "macro_f1": {
+        "mean": 0.9578205919370334,
+        "std": 0.0021790097235617283,
+        "min": 0.9549539778357915,
+        "max": 0.960867781931142,
+        "n": 4
+      }
+    },
+    "test": {
+      "acc": {
+        "mean": 0.9764813460131675,
+        "std": 0.0013223282723134847,
+        "min": 0.9743964886613021,
+        "max": 0.9777615215801024,
+        "n": 4
+      },
+      "loss": {
+        "mean": 0.07773013279876169,
+        "std": 0.004544218910427251,
+        "min": 0.07109020134725909,
+        "max": 0.08357791954393394,
+        "n": 4
+      },
+      "macro_precision": {
+        "mean": 0.9750837521881459,
+        "std": 0.002249401141821677,
+        "min": 0.9720521119136557,
+        "max": 0.9782987712610275,
+        "n": 4
+      },
+      "macro_recall": {
+        "mean": 0.9530160655893682,
+        "std": 0.0032760402717623214,
+        "min": 0.9482050969015897,
+        "max": 0.957032717239166,
+        "n": 4
+      },
+      "macro_f1": {
+        "mean": 0.9636704370874017,
+        "std": 0.002752360973448288,
+        "min": 0.9595008588090136,
+        "max": 0.9661993117309947,
+        "n": 4
+      },
+      "inference_latency_ms": {
+        "mean": 1.518378068751999,
+        "std": 0.055293881742141976,
+        "min": 1.4684830579004675,
+        "max": 1.6051929040410675,
+        "n": 4
+      }
+    },
+    "timing": {
+      "total_training_time_sec": {
+        "mean": 6562.16779088974,
+        "std": 1129.3650098099456,
+        "min": 5383.526921272278,
+        "max": 8198.859427928925,
+        "n": 4
+      },
+      "mean_epoch_time_seconds": {
+        "mean": 220.14499879823467,
+        "std": 21.799515888703134,
+        "min": 193.40960650090818,
+        "max": 250.99206026643515,
+        "n": 4
+      },
+      "max_epoch_time_seconds": {
+        "mean": 480.2153710722923,
+        "std": 19.264370781633836,
+        "min": 456.3760459423065,
+        "max": 510.08184909820557,
+        "n": 4
+      }
+    },
+    "model_parameters": {
+      "total": {
+        "mean": 2238668.0,
+        "std": 0.0,
+        "min": 2238668.0,
+        "max": 2238668.0,
+        "n": 4
+      },
+      "trainable": {
+        "mean": 2238668.0,
+        "std": 0.0,
+        "min": 2238668.0,
+        "max": 2238668.0,
+        "n": 4
+      }
+    },
+    "unknown_silence_analysis": {
+      "unknown": {
+        "precision": {
+          "mean": 0.9775674077310998,
+          "std": 0.0008863542086058982,
+          "min": 0.9762672811059908,
+          "max": 0.978728323699422,
+          "n": 4
+        },
+        "recall": {
+          "mean": 0.9929123711340206,
+          "std": 0.000765973338251077,
+          "min": 0.9917994376757263,
+          "max": 0.9939081537019682,
+          "n": 4
+        }
+      },
+      "silence": {
+        "precision": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "n": 4
+        },
+        "recall": {
+          "mean": 0.0,
+          "std": 0.0,
+          "min": 0.0,
+          "max": 0.0,
+          "n": 4
+        }
+      }
+    }
+  },
+  "per_seed_runs": [
+    {
+      "seed": 42,
+      "experiment_name": "mobilenetv2_full_specaugment_seed42",
+      "run_output_dir": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed42",
+      "summary_path": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed42\\summary_seed42.json",
+      "artifacts": {
+        "checkpoint": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed42\\best_model_seed42.pt",
+        "history_csv": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed42\\history_seed42.csv",
+        "summary_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed42\\summary_seed42.json",
+        "config_yaml": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed42\\config_seed42.yaml",
+        "confusion_matrix_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed42\\confusion_matrix_seed42.json",
+        "confusion_matrix_png": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed42\\confusion_matrix_seed42.png",
+        "error_analysis_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed42\\error_analysis_seed42.json",
+        "unknown_detector_checkpoint": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed42\\unknown_detector_seed42.pt",
+        "unknown_detector_summary_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed42\\unknown_detector_summary_seed42.json"
+      },
+      "epochs": {
+        "configured": 40,
+        "ran": 32,
+        "early_stopped": true,
+        "best_epoch": 23
+      },
+      "best_validation": {
+        "acc": 0.9734676503972758,
+        "loss": 0.09939313724052402,
+        "macro_precision": 0.970120091602769,
+        "macro_recall": 0.9477796373474576,
+        "macro_f1": 0.9585885540734224
+      },
+      "test": {
+        "loss": 0.08357791954393394,
+        "acc": 0.9743964886613021,
+        "macro_precision": 0.9720521119136557,
+        "macro_recall": 0.9482050969015897,
+        "macro_f1": 0.9595008588090136,
+        "inference_time_sec": 10.440479399869218,
+        "inference_latency_ms": 1.5275024725485322,
+        "used_separate_unknown_detector": false
+      },
+      "timing": {
+        "total_training_time_sec": 8198.859427928925,
+        "mean_epoch_time_seconds": 250.99206026643515,
+        "max_epoch_time_seconds": 510.08184909820557
+      },
+      "model_parameters": {
+        "total": 2238668,
+        "trainable": 2238668
+      },
+      "unknown_silence_analysis": {
+        "unknown": {
+          "precision": 0.9762672811059908,
+          "recall": 0.9927366447985004,
+          "support": 4268,
+          "predicted_total": 4340,
+          "most_confused_as": "left",
+          "most_common_source_as_prediction": "down"
+        },
+        "silence": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "support": 0,
+          "predicted_total": 0,
+          "most_confused_as": null,
+          "most_common_source_as_prediction": null
+        }
+      }
+    },
+    {
+      "seed": 123,
+      "experiment_name": "mobilenetv2_full_specaugment_seed123",
+      "run_output_dir": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed123",
+      "summary_path": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed123\\summary_seed123.json",
+      "artifacts": {
+        "checkpoint": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed123\\best_model_seed123.pt",
+        "history_csv": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed123\\history_seed123.csv",
+        "summary_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed123\\summary_seed123.json",
+        "config_yaml": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed123\\config_seed123.yaml",
+        "confusion_matrix_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed123\\confusion_matrix_seed123.json",
+        "confusion_matrix_png": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed123\\confusion_matrix_seed123.png",
+        "error_analysis_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed123\\error_analysis_seed123.json",
+        "unknown_detector_checkpoint": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed123\\unknown_detector_seed123.pt",
+        "unknown_detector_summary_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed123\\unknown_detector_summary_seed123.json"
+      },
+      "epochs": {
+        "configured": 40,
+        "ran": 33,
+        "early_stopped": true,
+        "best_epoch": 24
+      },
+      "best_validation": {
+        "acc": 0.9733257661748014,
+        "loss": 0.09478172574380944,
+        "macro_precision": 0.9710193518804915,
+        "macro_recall": 0.9511901281202414,
+        "macro_f1": 0.960867781931142
+      },
+      "test": {
+        "loss": 0.0767118756450599,
+        "acc": 0.9774689100219459,
+        "macro_precision": 0.9755816464143002,
+        "macro_recall": 0.957032717239166,
+        "macro_f1": 0.9660994248986488,
+        "inference_time_sec": 10.063401799940038,
+        "inference_latency_ms": 1.4723338405179283,
+        "used_separate_unknown_detector": false
+      },
+      "timing": {
+        "total_training_time_sec": 7014.685595273972,
+        "mean_epoch_time_seconds": 207.45666079810172,
+        "max_epoch_time_seconds": 478.9310586452484
+      },
+      "model_parameters": {
+        "total": 2238668,
+        "trainable": 2238668
+      },
+      "unknown_silence_analysis": {
+        "unknown": {
+          "precision": 0.978728323699422,
+          "recall": 0.9917994376757263,
+          "support": 4268,
+          "predicted_total": 4325,
+          "most_confused_as": "on",
+          "most_common_source_as_prediction": "right"
+        },
+        "silence": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "support": 0,
+          "predicted_total": 0,
+          "most_confused_as": null,
+          "most_common_source_as_prediction": null
+        }
+      }
+    },
+    {
+      "seed": 2026,
+      "experiment_name": "mobilenetv2_full_specaugment_seed2026",
+      "run_output_dir": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026",
+      "summary_path": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\summary_seed2026.json",
+      "artifacts": {
+        "checkpoint": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\best_model_seed2026.pt",
+        "history_csv": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\history_seed2026.csv",
+        "summary_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\summary_seed2026.json",
+        "config_yaml": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\config_seed2026.yaml",
+        "confusion_matrix_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\confusion_matrix_seed2026.json",
+        "confusion_matrix_png": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\confusion_matrix_seed2026.png",
+        "error_analysis_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\error_analysis_seed2026.json",
+        "unknown_detector_checkpoint": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\unknown_detector_seed2026.pt",
+        "unknown_detector_summary_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2026\\unknown_detector_summary_seed2026.json"
+      },
+      "epochs": {
+        "configured": 40,
+        "ran": 24,
+        "early_stopped": true,
+        "best_epoch": 15
+      },
+      "best_validation": {
+        "acc": 0.9723325766174802,
+        "loss": 0.0898218596409124,
+        "macro_precision": 0.9677144828186198,
+        "macro_recall": 0.9466130786145913,
+        "macro_f1": 0.9568720539077774
+      },
+      "test": {
+        "loss": 0.07109020134725909,
+        "acc": 0.9777615215801024,
+        "macro_precision": 0.9782987712610275,
+        "macro_recall": 0.9547046147308683,
+        "macro_f1": 0.9661993117309947,
+        "inference_time_sec": 10.971493499120697,
+        "inference_latency_ms": 1.6051929040410675,
+        "used_separate_unknown_detector": false
+      },
+      "timing": {
+        "total_training_time_sec": 5651.599219083786,
+        "mean_epoch_time_seconds": 228.72166762749353,
+        "max_epoch_time_seconds": 456.3760459423065
+      },
+      "model_parameters": {
+        "total": 2238668,
+        "trainable": 2238668
+      },
+      "unknown_silence_analysis": {
+        "unknown": {
+          "precision": 0.9774193548387097,
+          "recall": 0.9939081537019682,
+          "support": 4268,
+          "predicted_total": 4340,
+          "most_confused_as": "go",
+          "most_common_source_as_prediction": "right"
+        },
+        "silence": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "support": 0,
+          "predicted_total": 0,
+          "most_confused_as": null,
+          "most_common_source_as_prediction": null
+        }
+      }
+    },
+    {
+      "seed": 2137,
+      "experiment_name": "mobilenetv2_full_specaugment_seed2137",
+      "run_output_dir": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2137",
+      "summary_path": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2137\\summary_seed2137.json",
+      "artifacts": {
+        "checkpoint": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2137\\best_model_seed2137.pt",
+        "history_csv": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2137\\history_seed2137.csv",
+        "summary_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2137\\summary_seed2137.json",
+        "config_yaml": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2137\\config_seed2137.yaml",
+        "confusion_matrix_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2137\\confusion_matrix_seed2137.json",
+        "confusion_matrix_png": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2137\\confusion_matrix_seed2137.png",
+        "error_analysis_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2137\\error_analysis_seed2137.json",
+        "unknown_detector_checkpoint": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2137\\unknown_detector_seed2137.pt",
+        "unknown_detector_summary_json": "outputs\\mobilenetv2\\mobilenetv2_full_specaugment_seed2137\\unknown_detector_summary_seed2137.json"
+      },
+      "epochs": {
+        "configured": 40,
+        "ran": 27,
+        "early_stopped": true,
+        "best_epoch": 18
+      },
+      "best_validation": {
+        "acc": 0.9713393870601589,
+        "loss": 0.09328109311152943,
+        "macro_precision": 0.9661126844517297,
+        "macro_recall": 0.9444304627651486,
+        "macro_f1": 0.9549539778357915
+      },
+      "test": {
+        "loss": 0.07954053465879386,
+        "acc": 0.9762984637893197,
+        "macro_precision": 0.9744024791636003,
+        "macro_recall": 0.9521218334858489,
+        "macro_f1": 0.9628821529109498,
+        "inference_time_sec": 10.037081700749695,
+        "inference_latency_ms": 1.4684830579004675,
+        "used_separate_unknown_detector": false
+      },
+      "timing": {
+        "total_training_time_sec": 5383.526921272278,
+        "mean_epoch_time_seconds": 193.40960650090818,
+        "max_epoch_time_seconds": 475.4725306034088
+      },
+      "model_parameters": {
+        "total": 2238668,
+        "trainable": 2238668
+      },
+      "unknown_silence_analysis": {
+        "unknown": {
+          "precision": 0.9778546712802768,
+          "recall": 0.9932052483598875,
+          "support": 4268,
+          "predicted_total": 4335,
+          "most_confused_as": "down",
+          "most_common_source_as_prediction": "no"
+        },
+        "silence": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "support": 0,
+          "predicted_total": 0,
+          "most_confused_as": null,
+          "most_common_source_as_prediction": null
+        }
+      }
+    }
+  ]
+}
