@@ -26,6 +26,8 @@ class SpeechCommandsDataset(Dataset):
         freq_mask=8,
         silence_train_samples=2300,
         silence_eval_samples=250,
+        include_silence_in_test=False,
+        silence_test_samples=None,
         unknown_keep_prob=1.0,
     ):
         """
@@ -38,18 +40,26 @@ class SpeechCommandsDataset(Dataset):
             freq_mask (int): Max width for frequency masking.
             silence_train_samples (int): Number of synthetic silence samples for train split.
             silence_eval_samples (int): Number of synthetic silence samples for val split.
+            include_silence_in_test (bool): If True, include synthetic silence also in test split.
+            silence_test_samples (int | None): Number of synthetic silence samples for test split when enabled.
             unknown_keep_prob (float): Probability of keeping an "unknown" sample in train split.
         """
         if split not in {"train", "val", "test"}:
             raise ValueError(f"Unsupported split: {split}")
         if not (0.0 < unknown_keep_prob <= 1.0):
             raise ValueError("unknown_keep_prob must be in (0, 1]")
+        if silence_train_samples < 0 or silence_eval_samples < 0:
+            raise ValueError("silence sample counts must be non-negative")
+        if silence_test_samples is not None and silence_test_samples < 0:
+            raise ValueError("silence_test_samples must be non-negative when provided")
 
         self.root_dir = Path(root_dir)
         self.audio_root = self.root_dir / "audio" if (self.root_dir / "audio").exists() else self.root_dir
         self.split = split
         self.sample_rate = 16000
         self.apply_augment = apply_augment and split == "train"
+        self.include_silence_in_test = bool(include_silence_in_test)
+        self.silence_test_samples = silence_eval_samples if silence_test_samples is None else int(silence_test_samples)
         self.unknown_keep_prob = unknown_keep_prob
 
         if not self.audio_root.exists():
@@ -104,8 +114,14 @@ class SpeechCommandsDataset(Dataset):
                     self.file_paths.append(wav_path)
                     self.labels.append(label_idx)
 
-        if split != "test":
-            silence_count = silence_train_samples if split == "train" else silence_eval_samples
+        should_add_silence = split != "test" or self.include_silence_in_test
+        if should_add_silence:
+            if split == "train":
+                silence_count = silence_train_samples
+            elif split == "val":
+                silence_count = silence_eval_samples
+            else:
+                silence_count = self.silence_test_samples
             for _ in range(silence_count):
                 self.file_paths.append(self.SILENCE_MARKER)
                 self.labels.append(self.class_to_idx["silence"])

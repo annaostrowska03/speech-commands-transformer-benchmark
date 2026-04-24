@@ -30,6 +30,7 @@ except ImportError:
 
 
 CLASS_NAMES = SpeechCommandsDataset.TARGET_WORDS + ["unknown", "silence"]
+UNKNOWN_CLASS_INDEX = CLASS_NAMES.index("unknown")
 
 
 def set_seed(seed):
@@ -259,6 +260,271 @@ def save_confusion_matrix_plot(confusion_payload, output_path, title):
     plt.close(fig)
 
 
+def map_labels_to_unknown_binary(labels, unknown_class_index=UNKNOWN_CLASS_INDEX):
+    return (labels == unknown_class_index).long()
+
+
+def train_unknown_detector_one_epoch(model, dataloader, criterion, optimizer, device):
+    model.train()
+    running_loss = 0.0
+    correct = 0
+    total = 0
+
+    for inputs, labels in dataloader:
+        inputs, labels = inputs.to(device), labels.to(device)
+        binary_labels = map_labels_to_unknown_binary(labels)
+
+        optimizer.zero_grad(set_to_none=True)
+        outputs = model(inputs)
+        loss = criterion(outputs, binary_labels)
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.item() * inputs.size(0)
+        predicted = outputs.argmax(dim=1)
+        total += binary_labels.size(0)
+        correct += predicted.eq(binary_labels).sum().item()
+
+    return running_loss / max(total, 1), correct / max(total, 1)
+
+
+def evaluate_unknown_detector(model, dataloader, criterion, device, threshold=0.5):
+    model.eval()
+    running_loss = 0.0
+    total = 0
+    correct = 0
+    all_true = []
+    all_pred = []
+
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            binary_labels = map_labels_to_unknown_binary(labels)
+
+            outputs = model(inputs)
+            probabilities = torch.softmax(outputs, dim=1)[:, 1]
+            predicted = (probabilities >= threshold).long()
+
+            loss = criterion(outputs, binary_labels)
+            running_loss += loss.item() * inputs.size(0)
+
+            total += binary_labels.size(0)
+            correct += predicted.eq(binary_labels).sum().item()
+            all_true.extend(binary_labels.cpu().tolist())
+            all_pred.extend(predicted.cpu().tolist())
+
+    precision, recall, f1, _ = precision_recall_fscore_support(
+        all_true,
+        all_pred,
+        average="binary",
+        zero_division=0,
+    )
+    metrics = {
+        "precision": float(precision),
+        "recall": float(recall),
+        "f1": float(f1),
+        "acc": float(correct / max(total, 1)),
+        "threshold": float(threshold),
+    }
+    return running_loss / max(total, 1), correct / max(total, 1), metrics
+
+
+def train_separate_unknown_detector(
+    args,
+    train_loader,
+    val_loader,
+    device,
+    checkpoint_path,
+    summary_path,
+):
+    detector_model_name = args.unknown_detector_model if args.unknown_detector_model else args.model
+    detector_lr = args.unknown_detector_lr if args.unknown_detector_lr is not None else args.lr
+    detector_dropout = args.unknown_detector_dropout if args.unknown_detector_dropout is not None else args.dropout
+
+    detector_model = get_model(
+        detector_model_name,
+        num_classes=2,
+        input_channels=1,
+        use_pretrained=args.use_pretrained,
+        freeze_backbone=args.freeze_backbone,
+        dropout=detector_dropout,
+    ).to(device)
+
+    total_params, trainable_param_count = count_model_parameters(detector_model)
+    trainable_param_iterator = filter(lambda parameter: parameter.requires_grad, detector_model.parameters())
+    if args.optimizer == "sgd":
+        optimizer = optim.SGD(trainable_param_iterator, lr=detector_lr, momentum=args.momentum, weight_decay=args.weight_decay)
+    else:
+        optimizer = optim.Adam(trainable_param_iterator, lr=detector_lr, weight_decay=args.weight_decay)
+    criterion = nn.CrossEntropyLoss()
+
+    detector_epochs = int(max(1, args.unknown_detector_epochs))
+    detector_patience = int(max(2, min(args.patience, detector_epochs)))
+
+    best_val_acc = float("-inf")
+    best_state = None
+    best_epoch = None
+    patience_counter = 0
+
+    for epoch in range(detector_epochs):
+        train_loss, train_acc = train_unknown_detector_one_epoch(detector_model, train_loader, criterion, optimizer, device)
+        val_loss, val_acc, val_metrics = evaluate_unknown_detector(
+            detector_model,
+            val_loader,
+            criterion,
+            device,
+            threshold=args.unknown_detector_threshold,
+        )
+
+        print(
+            f"[UnknownDetector] Epoch {epoch}: "
+            f"Train Acc={train_acc:.4f}, Val Acc={val_acc:.4f}, Val F1={val_metrics['f1']:.4f}"
+        )
+
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+            best_epoch = epoch
+            best_state = {key: value.detach().cpu().clone() for key, value in detector_model.state_dict().items()}
+            patience_counter = 0
+        else:
+            patience_counter += 1
+
+        if patience_counter >= detector_patience:
+            print(f"[UnknownDetector] Early stopping after {epoch + 1} epochs.")
+            break
+
+    if best_state is not None:
+        detector_model.load_state_dict(best_state)
+
+    checkpoint_payload = {
+        "model_state_dict": detector_model.state_dict(),
+        "model": detector_model_name,
+        "seed": int(args.seed),
+        "best_epoch": int(best_epoch) if best_epoch is not None else None,
+        "best_val_acc": float(best_val_acc) if best_val_acc != float("-inf") else None,
+    }
+    torch.save(checkpoint_payload, str(checkpoint_path))
+
+    _, val_acc, val_metrics = evaluate_unknown_detector(
+        detector_model,
+        val_loader,
+        criterion,
+        device,
+        threshold=args.unknown_detector_threshold,
+    )
+    summary_payload = {
+        "model": detector_model_name,
+        "seed": int(args.seed),
+        "threshold": float(args.unknown_detector_threshold),
+        "epochs_configured": detector_epochs,
+        "best_epoch": int(best_epoch) if best_epoch is not None else None,
+        "best_val_acc": float(best_val_acc) if best_val_acc != float("-inf") else None,
+        "val_binary_metrics": val_metrics,
+        "model_parameters": {
+            "total": int(total_params),
+            "trainable": int(trainable_param_count),
+        },
+        "checkpoint": str(checkpoint_path),
+    }
+    write_run_summary(summary_payload, summary_path)
+    return detector_model, summary_payload
+
+
+def evaluate_with_unknown_detector(
+    model,
+    unknown_detector_model,
+    dataloader,
+    criterion,
+    device,
+    threshold=0.5,
+    unknown_class_index=UNKNOWN_CLASS_INDEX,
+    measure_latency=False,
+):
+    model.eval()
+    unknown_detector_model.eval()
+
+    running_loss = 0.0
+    correct = 0
+    total = 0
+    all_labels = []
+    all_preds = []
+    all_unknown_true = []
+    all_unknown_pred = []
+    override_count = 0
+    inference_time_sec = 0.0
+
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            inputs, labels = inputs.to(device), labels.to(device)
+
+            if measure_latency and device.type == "cuda":
+                torch.cuda.synchronize()
+            batch_start = time.perf_counter() if measure_latency else None
+
+            main_outputs = model(inputs)
+            unknown_outputs = unknown_detector_model(inputs)
+
+            if measure_latency and device.type == "cuda":
+                torch.cuda.synchronize()
+            if measure_latency and batch_start is not None:
+                inference_time_sec += time.perf_counter() - batch_start
+
+            loss = criterion(main_outputs, labels)
+            running_loss += loss.item() * inputs.size(0)
+
+            main_predicted = main_outputs.argmax(dim=1)
+            unknown_probabilities = torch.softmax(unknown_outputs, dim=1)[:, 1]
+            predicted_unknown = unknown_probabilities >= threshold
+
+            final_predicted = main_predicted.clone()
+            override_count += int((predicted_unknown & (main_predicted != unknown_class_index)).sum().item())
+            final_predicted[predicted_unknown] = unknown_class_index
+
+            total += labels.size(0)
+            correct += final_predicted.eq(labels).sum().item()
+
+            binary_true = map_labels_to_unknown_binary(labels, unknown_class_index=unknown_class_index)
+            binary_pred = predicted_unknown.long()
+            all_unknown_true.extend(binary_true.cpu().tolist())
+            all_unknown_pred.extend(binary_pred.cpu().tolist())
+
+            all_labels.extend(labels.cpu().tolist())
+            all_preds.extend(final_predicted.cpu().tolist())
+
+    macro_precision, macro_recall, macro_f1, _ = precision_recall_fscore_support(
+        all_labels,
+        all_preds,
+        average="macro",
+        zero_division=0,
+    )
+    unknown_precision, unknown_recall, unknown_f1, _ = precision_recall_fscore_support(
+        all_unknown_true,
+        all_unknown_pred,
+        average="binary",
+        zero_division=0,
+    )
+    unknown_positive_rate = float(np.mean(all_unknown_pred)) if len(all_unknown_pred) > 0 else 0.0
+
+    metrics = {
+        "macro_precision": float(macro_precision),
+        "macro_recall": float(macro_recall),
+        "macro_f1": float(macro_f1),
+        "unknown_detector_precision": float(unknown_precision),
+        "unknown_detector_recall": float(unknown_recall),
+        "unknown_detector_f1": float(unknown_f1),
+        "unknown_detector_acc": float(np.mean(np.array(all_unknown_true) == np.array(all_unknown_pred))) if len(all_unknown_true) > 0 else 0.0,
+        "unknown_detector_threshold": float(threshold),
+        "unknown_detector_positive_rate": float(unknown_positive_rate),
+        "overridden_to_unknown_count": int(override_count),
+        "overridden_to_unknown_rate": float(override_count / max(total, 1)),
+    }
+    if measure_latency:
+        metrics["inference_time_sec"] = float(inference_time_sec)
+        metrics["inference_latency_ms"] = float((inference_time_sec / total) * 1000.0) if total > 0 else None
+
+    return running_loss / max(total, 1), correct / max(total, 1), metrics, all_labels, all_preds
+
+
 def add_seed_suffix_to_filename(file_name, seed):
     path_obj = Path(file_name)
     seed_tag = f"seed{seed}"
@@ -297,6 +563,8 @@ def resolve_run_output_paths(args):
         "confusion_matrix_json": run_output_dir / f"confusion_matrix_seed{args.seed}.json",
         "confusion_matrix_png": run_output_dir / f"confusion_matrix_seed{args.seed}.png",
         "error_analysis_json": run_output_dir / f"error_analysis_seed{args.seed}.json",
+        "unknown_detector_checkpoint": run_output_dir / f"unknown_detector_seed{args.seed}.pt",
+        "unknown_detector_summary_json": run_output_dir / f"unknown_detector_summary_seed{args.seed}.json",
     }
     return run_output_dir, output_paths
 
@@ -503,6 +771,8 @@ def run_experiment(args):
             n_mels=args.n_mels,
             silence_train_samples=args.silence_train_samples,
             silence_eval_samples=args.silence_eval_samples,
+            include_silence_in_test=args.include_silence_in_test,
+            silence_test_samples=args.silence_test_samples,
         )
         test_loader = DataLoader(
             test_ds,
@@ -545,6 +815,8 @@ def run_experiment(args):
     test_payload = None
     confusion_payload = None
     unknown_silence_payload = None
+    unknown_detector_model = None
+    unknown_detector_summary = None
     
     print(f"Starting training on {gpu_name}...")
     print(f"Run seed: {args.seed}")
@@ -557,7 +829,28 @@ def run_experiment(args):
             f"(configured: {args.unknown_keep_prob:.3f})"
         )
     print(f"Model parameters: total={total_params:,}, trainable={trainable_param_count:,}")
+    print(f"Separate unknown detector enabled: {args.use_separate_unknown_detector}")
+    print(f"Include synthetic silence in test split: {args.include_silence_in_test}")
+    if args.include_silence_in_test:
+        print(f"Synthetic silence samples in test split: {args.silence_test_samples}")
     print(f"Run outputs directory: {run_output_dir}")
+
+    if args.use_separate_unknown_detector:
+        print("Training separate binary unknown detector...")
+        unknown_detector_model, unknown_detector_summary = train_separate_unknown_detector(
+            args=args,
+            train_loader=train_loader,
+            val_loader=val_loader,
+            device=device,
+            checkpoint_path=output_paths["unknown_detector_checkpoint"],
+            summary_path=output_paths["unknown_detector_summary_json"],
+        )
+        print(
+            "[UnknownDetector] "
+            f"Val Acc={unknown_detector_summary['val_binary_metrics']['acc']:.4f}, "
+            f"Val F1={unknown_detector_summary['val_binary_metrics']['f1']:.4f}, "
+            f"Threshold={unknown_detector_summary['threshold']:.2f}"
+        )
 
     use_mlflow = (mlflow is not None) and (not args.disable_mlflow)
     if mlflow is None and not args.disable_mlflow:
@@ -663,14 +956,26 @@ def run_experiment(args):
 
         if args.run_test and test_loader is not None:
             load_model_state_dict_from_checkpoint(model, checkpoint_path, device)
-            test_loss, test_acc, test_metrics, test_labels, test_preds = evaluate(
-                model,
-                test_loader,
-                criterion,
-                device,
-                measure_latency=True,
-                return_predictions=True,
-            )
+            if unknown_detector_model is not None:
+                test_loss, test_acc, test_metrics, test_labels, test_preds = evaluate_with_unknown_detector(
+                    model,
+                    unknown_detector_model,
+                    test_loader,
+                    criterion,
+                    device,
+                    threshold=args.unknown_detector_threshold,
+                    unknown_class_index=UNKNOWN_CLASS_INDEX,
+                    measure_latency=True,
+                )
+            else:
+                test_loss, test_acc, test_metrics, test_labels, test_preds = evaluate(
+                    model,
+                    test_loader,
+                    criterion,
+                    device,
+                    measure_latency=True,
+                    return_predictions=True,
+                )
             print(
                 f"Test: Acc={test_acc:.4f}, Loss={test_loss:.4f}, "
                 f"Macro-Precision={test_metrics['macro_precision']:.4f}, "
@@ -706,18 +1011,42 @@ def run_experiment(args):
                 "macro_f1": float(test_metrics["macro_f1"]),
                 "inference_time_sec": float(test_metrics["inference_time_sec"]),
                 "inference_latency_ms": float(test_metrics["inference_latency_ms"]) if test_metrics["inference_latency_ms"] is not None else None,
+                "used_separate_unknown_detector": bool(unknown_detector_model is not None),
             }
-            if use_mlflow:
-                mlflow.log_metrics(
+            if unknown_detector_model is not None:
+                test_payload.update(
                     {
-                        "test_loss": test_loss,
-                        "test_acc": test_acc,
-                        "test_macro_precision": test_metrics["macro_precision"],
-                        "test_macro_recall": test_metrics["macro_recall"],
-                        "test_macro_f1": test_metrics["macro_f1"],
-                        "test_inference_latency_ms": test_metrics["inference_latency_ms"] if test_metrics["inference_latency_ms"] is not None else 0.0,
+                        "unknown_detector_precision": float(test_metrics["unknown_detector_precision"]),
+                        "unknown_detector_recall": float(test_metrics["unknown_detector_recall"]),
+                        "unknown_detector_f1": float(test_metrics["unknown_detector_f1"]),
+                        "unknown_detector_acc": float(test_metrics["unknown_detector_acc"]),
+                        "unknown_detector_threshold": float(test_metrics["unknown_detector_threshold"]),
+                        "unknown_detector_positive_rate": float(test_metrics["unknown_detector_positive_rate"]),
+                        "overridden_to_unknown_count": int(test_metrics["overridden_to_unknown_count"]),
+                        "overridden_to_unknown_rate": float(test_metrics["overridden_to_unknown_rate"]),
                     }
                 )
+            if use_mlflow:
+                metrics_to_log = {
+                    "test_loss": test_loss,
+                    "test_acc": test_acc,
+                    "test_macro_precision": test_metrics["macro_precision"],
+                    "test_macro_recall": test_metrics["macro_recall"],
+                    "test_macro_f1": test_metrics["macro_f1"],
+                    "test_inference_latency_ms": test_metrics["inference_latency_ms"] if test_metrics["inference_latency_ms"] is not None else 0.0,
+                }
+                if unknown_detector_model is not None:
+                    metrics_to_log.update(
+                        {
+                            "test_unknown_detector_precision": test_metrics["unknown_detector_precision"],
+                            "test_unknown_detector_recall": test_metrics["unknown_detector_recall"],
+                            "test_unknown_detector_f1": test_metrics["unknown_detector_f1"],
+                            "test_unknown_detector_acc": test_metrics["unknown_detector_acc"],
+                            "test_unknown_detector_positive_rate": test_metrics["unknown_detector_positive_rate"],
+                            "test_overridden_to_unknown_rate": test_metrics["overridden_to_unknown_rate"],
+                        }
+                    )
+                mlflow.log_metrics(metrics_to_log)
 
         total_time = time.time() - start_time
         if use_mlflow:
@@ -771,6 +1100,11 @@ def run_experiment(args):
             },
             "test": test_payload,
             "unknown_silence_analysis": unknown_silence_payload,
+            "separate_unknown_detector": {
+                "enabled": bool(args.use_separate_unknown_detector),
+                "threshold": float(args.unknown_detector_threshold),
+                "summary": unknown_detector_summary,
+            },
             "timing": {
                 "total_training_time_sec": float(total_time),
                 "mean_epoch_time_seconds": float(np.mean(epoch_times)) if len(epoch_times) > 0 else 0.0,
@@ -788,6 +1122,9 @@ def run_experiment(args):
             if plt is not None:
                 print(f"Saved confusion matrix PNG -> {output_paths['confusion_matrix_png']}")
             print(f"Saved error analysis -> {output_paths['error_analysis_json']}")
+        if unknown_detector_summary is not None:
+            print(f"Saved unknown detector checkpoint -> {output_paths['unknown_detector_checkpoint']}")
+            print(f"Saved unknown detector summary -> {output_paths['unknown_detector_summary_json']}")
         print(f"Training finished in {total_time:.2f} seconds.")
 
         return {
@@ -848,9 +1185,17 @@ def build_parser():
     parser.add_argument('--use_weighted_loss', action='store_true', help='Use weighted CrossEntropy')
     parser.add_argument('--use_unknown_undersampling', action='store_true', help='Undersample unknown class in train split')
     parser.add_argument('--unknown_keep_prob', type=float, default=0.35, help='Keep probability for unknown class when undersampling is enabled')
+    parser.add_argument('--use_separate_unknown_detector', action='store_true', help='Train a separate binary network for unknown-vs-rest and use it to override final predictions')
+    parser.add_argument('--unknown_detector_model', type=str, default=None, choices=available_models, help='Model for separate unknown detector (defaults to main model)')
+    parser.add_argument('--unknown_detector_epochs', type=int, default=8, help='Epochs for separate unknown detector training')
+    parser.add_argument('--unknown_detector_lr', type=float, default=None, help='Learning rate for separate unknown detector (defaults to --lr)')
+    parser.add_argument('--unknown_detector_dropout', type=float, default=None, help='Dropout for separate unknown detector (defaults to --dropout)')
+    parser.add_argument('--unknown_detector_threshold', type=float, default=0.5, help='Probability threshold for predicting unknown in separate detector')
     parser.add_argument('--balancing', type=str, default='none', choices=['none', 'loss', 'undersample', 'loss+undersample'], help='Compatibility flag for class balancing')
     parser.add_argument('--silence_train_samples', type=int, default=2300, help='Synthetic silence samples for train')
     parser.add_argument('--silence_eval_samples', type=int, default=250, help='Synthetic silence samples for validation')
+    parser.add_argument('--include_silence_in_test', action='store_true', help='Include synthetic silence samples in test split')
+    parser.add_argument('--silence_test_samples', type=int, default=250, help='Synthetic silence samples for test split when --include_silence_in_test is enabled')
     parser.add_argument('--run_test', action='store_true', help='Evaluate the best checkpoint on official test split')
     parser.add_argument('--checkpoint_path', type=str, default='best_model.pt', help='Base checkpoint filename (saved under outputs/{model}/{experiment_name} with automatic seed suffix)')
     parser.add_argument('--disable_mlflow', action='store_true', help='Disable MLflow logging')
