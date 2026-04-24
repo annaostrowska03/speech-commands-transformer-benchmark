@@ -3,7 +3,8 @@ param(
     [string]$ConfigDir = ".\configs",
     [string[]]$ConfigNames = @(
         "mobilenetv2_smoke_baseline.yaml",
-        "mobilenetv2_smoke_specaugment.yaml"
+        "mobilenetv2_smoke_specaugment.yaml",
+        "resnet18_smoke_unknown_detector.yaml"
     )
 )
 

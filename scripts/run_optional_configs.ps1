@@ -7,7 +7,8 @@ param(
         "mobilenetv2_full_baseline.yaml",
         "mobilenetv2_full_specaugment.yaml",
         "resnet18_full_batch32.yaml",
-        "resnet18_full_lr0003.yaml"
+        "resnet18_full_lr0003.yaml",
+        "resnet18_full_unknown_detector.yaml"
     )
 )
 
