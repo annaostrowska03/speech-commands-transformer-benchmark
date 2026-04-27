@@ -2,6 +2,32 @@ import inspect
 import torch.nn as nn
 from torchvision import models
 
+
+class RepeatInputChannels(nn.Module):
+    """Wrap a model and repeat input channels to match expected channel count."""
+
+    def __init__(self, base_model, in_channels=1, out_channels=3):
+        super().__init__()
+        self.base_model = base_model
+        self.in_channels = int(in_channels)
+        self.out_channels = int(out_channels)
+
+    def forward(self, x):
+        if x.shape[1] == self.out_channels:
+            return self.base_model(x)
+        if x.shape[1] != self.in_channels:
+            raise ValueError(
+                f"Unexpected input channels: got {x.shape[1]}, expected {self.in_channels} or {self.out_channels}"
+            )
+
+        repeats = self.out_channels // self.in_channels
+        if self.in_channels * repeats != self.out_channels:
+            raise ValueError(
+                f"Cannot evenly repeat from {self.in_channels} channels to {self.out_channels} channels"
+            )
+        x = x.repeat(1, repeats, 1, 1)
+        return self.base_model(x)
+
 def get_resnet18_model(
     num_classes=12,
     input_channels=1,
@@ -50,6 +76,40 @@ def get_resnet18_model(
     return model
 
 
+def get_resnet18_no_audio_tweaks_model(
+    num_classes=12,
+    input_channels=1,
+    use_pretrained=True,
+    freeze_backbone=False,
+    dropout=0.0,
+):
+    """Image-style ResNet18 baseline without audio-specific stem adaptation.
+
+    Keeps the original 3-channel conv1 and repeats 1-channel spectrogram input to RGB-like 3-channel input.
+    """
+    weights = models.ResNet18_Weights.IMAGENET1K_V1 if use_pretrained else None
+    model = models.resnet18(weights=weights)
+
+    if freeze_backbone:
+        for param in model.parameters():
+            param.requires_grad = False
+
+    num_ftrs = model.fc.in_features
+    if dropout > 0.0:
+        model.fc = nn.Sequential(
+            nn.Dropout(p=dropout),
+            nn.Linear(num_ftrs, num_classes),
+        )
+    else:
+        model.fc = nn.Linear(num_ftrs, num_classes)
+
+    if freeze_backbone:
+        for param in model.fc.parameters():
+            param.requires_grad = True
+
+    return RepeatInputChannels(model, in_channels=input_channels, out_channels=3)
+
+
 def get_mobilenetv2_model(
     num_classes=12,
     input_channels=1,
@@ -96,6 +156,7 @@ def get_mobilenetv2_model(
 
 MODEL_BUILDERS = {
     "resnet18": get_resnet18_model,
+    "resnet18_no_audio_tweaks": get_resnet18_no_audio_tweaks_model,
     "mobilenetv2": get_mobilenetv2_model,
 }
 

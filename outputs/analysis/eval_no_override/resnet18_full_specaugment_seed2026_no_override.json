@@ -1,0 +1,589 @@
+{
+  "compare_silence_modes": false,
+  "result": {
+    "mode": "official_test_without_silence",
+    "include_silence_in_test": false,
+    "test_size": 6835,
+    "device": "cuda",
+    "device_name": "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "checkpoint_path": "C:\\Users\\anost\\OneDrive\\Pulpit\\DS_sem1\\DeepLearning\\DeepLearning_transformers\\outputs\\resnet18\\resnet18_full_specaugment_seed2026\\best_model_seed2026.pt",
+    "model": "resnet18",
+    "n_mels": 64,
+    "batch_size": 64,
+    "num_workers": 4,
+    "test": {
+      "loss": 0.07231007446293074,
+      "acc": 0.9801024140453548,
+      "macro_precision": 0.9831327225231908,
+      "macro_recall": 0.9597101954775232,
+      "macro_f1": 0.9710946585942146,
+      "inference_time_sec": 2.7743006000091555,
+      "inference_latency_ms": 0.4058962106816613,
+      "used_separate_unknown_detector": false
+    },
+    "unknown_silence_analysis": {
+      "unknown": {
+        "precision": 0.9781055542751786,
+        "recall": 0.9943767572633552,
+        "support": 4268,
+        "predicted_total": 4339,
+        "most_confused_as": "on",
+        "most_common_source_as_prediction": "right"
+      },
+      "silence": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "support": 0,
+        "predicted_total": 0,
+        "most_confused_as": null,
+        "most_common_source_as_prediction": null
+      }
+    },
+    "confusion_matrix": {
+      "class_names": [
+        "yes",
+        "no",
+        "up",
+        "down",
+        "left",
+        "right",
+        "on",
+        "off",
+        "stop",
+        "go",
+        "unknown",
+        "silence"
+      ],
+      "confusion_matrix": [
+        [
+          247,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          9,
+          0
+        ],
+        [
+          0,
+          239,
+          0,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          11,
+          0
+        ],
+        [
+          0,
+          0,
+          264,
+          0,
+          0,
+          0,
+          0,
+          3,
+          0,
+          0,
+          5,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          244,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          8,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          260,
+          0,
+          0,
+          0,
+          0,
+          0,
+          6,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          237,
+          0,
+          0,
+          0,
+          0,
+          22,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          235,
+          1,
+          0,
+          0,
+          10,
+          0
+        ],
+        [
+          0,
+          0,
+          2,
+          0,
+          0,
+          0,
+          0,
+          252,
+          0,
+          1,
+          7,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          244,
+          0,
+          4,
+          0
+        ],
+        [
+          0,
+          3,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          233,
+          13,
+          0
+        ],
+        [
+          0,
+          2,
+          1,
+          5,
+          0,
+          1,
+          13,
+          1,
+          0,
+          1,
+          4244,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      ],
+      "confusion_matrix_normalized": [
+        [
+          0.96484375,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.03515625,
+          0.0
+        ],
+        [
+          0.0,
+          0.9484126984126984,
+          0.0,
+          0.007936507936507936,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.04365079365079365,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.9705882352941176,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.011029411764705883,
+          0.0,
+          0.0,
+          0.01838235294117647,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.9644268774703557,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.003952569169960474,
+          0.03162055335968379,
+          0.0
+        ],
+        [
+          0.003745318352059925,
+          0.0,
+          0.0,
+          0.0,
+          0.9737827715355806,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.02247191011235955,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.915057915057915,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.08494208494208494,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.9552845528455285,
+          0.0040650406504065045,
+          0.0,
+          0.0,
+          0.04065040650406504,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.007633587786259542,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.9618320610687023,
+          0.0,
+          0.003816793893129771,
+          0.026717557251908396,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.004016064257028112,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.9799196787148594,
+          0.0,
+          0.01606425702811245,
+          0.0
+        ],
+        [
+          0.0,
+          0.01195219123505976,
+          0.00398406374501992,
+          0.00398406374501992,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.9282868525896414,
+          0.05179282868525897,
+          0.0
+        ],
+        [
+          0.0,
+          0.00046860356138706655,
+          0.00023430178069353328,
+          0.0011715089034676663,
+          0.0,
+          0.00023430178069353328,
+          0.0030459231490159327,
+          0.00023430178069353328,
+          0.0,
+          0.00023430178069353328,
+          0.9943767572633552,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "per_class_metrics": [
+        {
+          "class_index": 0,
+          "class_name": "yes",
+          "precision": 0.9959677419354839,
+          "recall": 0.96484375,
+          "f1": 0.9801587301587301,
+          "support": 256
+        },
+        {
+          "class_index": 1,
+          "class_name": "no",
+          "precision": 0.9795081967213115,
+          "recall": 0.9484126984126984,
+          "f1": 0.9637096774193549,
+          "support": 252
+        },
+        {
+          "class_index": 2,
+          "class_name": "up",
+          "precision": 0.9814126394052045,
+          "recall": 0.9705882352941176,
+          "f1": 0.9759704251386322,
+          "support": 272
+        },
+        {
+          "class_index": 3,
+          "class_name": "down",
+          "precision": 0.9682539682539683,
+          "recall": 0.9644268774703557,
+          "f1": 0.9663366336633663,
+          "support": 253
+        },
+        {
+          "class_index": 4,
+          "class_name": "left",
+          "precision": 1.0,
+          "recall": 0.9737827715355806,
+          "f1": 0.9867172675521821,
+          "support": 267
+        },
+        {
+          "class_index": 5,
+          "class_name": "right",
+          "precision": 0.9957983193277311,
+          "recall": 0.915057915057915,
+          "f1": 0.9537223340040242,
+          "support": 259
+        },
+        {
+          "class_index": 6,
+          "class_name": "on",
+          "precision": 0.9475806451612904,
+          "recall": 0.9552845528455285,
+          "f1": 0.951417004048583,
+          "support": 246
+        },
+        {
+          "class_index": 7,
+          "class_name": "off",
+          "precision": 0.980544747081712,
+          "recall": 0.9618320610687023,
+          "f1": 0.9710982658959537,
+          "support": 262
+        },
+        {
+          "class_index": 8,
+          "class_name": "stop",
+          "precision": 1.0,
+          "recall": 0.9799196787148594,
+          "f1": 0.9898580121703854,
+          "support": 249
+        },
+        {
+          "class_index": 9,
+          "class_name": "go",
+          "precision": 0.9872881355932204,
+          "recall": 0.9282868525896414,
+          "f1": 0.9568788501026694,
+          "support": 251
+        },
+        {
+          "class_index": 10,
+          "class_name": "unknown",
+          "precision": 0.9781055542751786,
+          "recall": 0.9943767572633552,
+          "f1": 0.9861740443824794,
+          "support": 4268
+        },
+        {
+          "class_index": 11,
+          "class_name": "silence",
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 0
+        }
+      ],
+      "top_confusions": [
+        {
+          "true_class": "right",
+          "predicted_as": "unknown",
+          "count": 22,
+          "rate_within_true": 0.08494208494208494
+        },
+        {
+          "true_class": "go",
+          "predicted_as": "unknown",
+          "count": 13,
+          "rate_within_true": 0.05179282868525897
+        },
+        {
+          "true_class": "unknown",
+          "predicted_as": "on",
+          "count": 13,
+          "rate_within_true": 0.0030459231490159327
+        },
+        {
+          "true_class": "no",
+          "predicted_as": "unknown",
+          "count": 11,
+          "rate_within_true": 0.04365079365079365
+        },
+        {
+          "true_class": "on",
+          "predicted_as": "unknown",
+          "count": 10,
+          "rate_within_true": 0.04065040650406504
+        },
+        {
+          "true_class": "yes",
+          "predicted_as": "unknown",
+          "count": 9,
+          "rate_within_true": 0.03515625
+        },
+        {
+          "true_class": "down",
+          "predicted_as": "unknown",
+          "count": 8,
+          "rate_within_true": 0.03162055335968379
+        },
+        {
+          "true_class": "off",
+          "predicted_as": "unknown",
+          "count": 7,
+          "rate_within_true": 0.026717557251908396
+        },
+        {
+          "true_class": "left",
+          "predicted_as": "unknown",
+          "count": 6,
+          "rate_within_true": 0.02247191011235955
+        },
+        {
+          "true_class": "up",
+          "predicted_as": "unknown",
+          "count": 5,
+          "rate_within_true": 0.01838235294117647
+        },
+        {
+          "true_class": "unknown",
+          "predicted_as": "down",
+          "count": 5,
+          "rate_within_true": 0.0011715089034676663
+        },
+        {
+          "true_class": "stop",
+          "predicted_as": "unknown",
+          "count": 4,
+          "rate_within_true": 0.01606425702811245
+        },
+        {
+          "true_class": "up",
+          "predicted_as": "off",
+          "count": 3,
+          "rate_within_true": 0.011029411764705883
+        },
+        {
+          "true_class": "go",
+          "predicted_as": "no",
+          "count": 3,
+          "rate_within_true": 0.01195219123505976
+        },
+        {
+          "true_class": "no",
+          "predicted_as": "down",
+          "count": 2,
+          "rate_within_true": 0.007936507936507936
+        }
+      ]
+    }
+  }
+}

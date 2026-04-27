@@ -17,6 +17,7 @@ from train import (
     evaluate_with_unknown_detector,
     load_model_state_dict_from_checkpoint,
     make_json_safe,
+    save_confusion_matrix_plot,
     set_seed,
 )
 
@@ -55,6 +56,7 @@ def build_parser():
     parser.add_argument("--compare_silence_modes", action="store_true", help="Evaluate both modes: official test and test+synthetic-silence")
 
     parser.add_argument("--use_separate_unknown_detector", action="store_true", help="Use additional unknown detector during evaluation")
+    parser.add_argument("--disable_unknown_override", action="store_true", help="Force evaluation without unknown-detector override (even if config enables it)")
     parser.add_argument("--unknown_detector_model", type=str, default=None, choices=available_models, help="Model for unknown detector")
     parser.add_argument("--unknown_detector_dropout", type=float, default=None, help="Dropout for unknown detector model")
     parser.add_argument("--unknown_detector_checkpoint", type=str, default=None, help="Path to unknown detector checkpoint")
@@ -84,6 +86,9 @@ def parse_args_with_optional_config():
         parser.set_defaults(**filtered_config)
 
     args = parser.parse_args()
+
+    if args.disable_unknown_override:
+        args.use_separate_unknown_detector = False
 
     if args.checkpoint_path is None and args.config is not None:
         config_parent = Path(args.config).resolve().parent
@@ -253,6 +258,25 @@ def print_short_result(result):
     )
 
 
+def save_confusion_artifacts_for_result(result, output_base_path):
+    confusion_payload = result.get("confusion_matrix")
+    if confusion_payload is None:
+        return None, None
+
+    json_path = output_base_path.parent / f"{output_base_path.name}_confusion_matrix.json"
+    png_path = output_base_path.parent / f"{output_base_path.name}_confusion_matrix.png"
+
+    with open(json_path, "w", encoding="utf-8") as file_obj:
+        json.dump(make_json_safe(confusion_payload), file_obj, indent=2)
+
+    save_confusion_matrix_plot(
+        confusion_payload,
+        png_path,
+        title=f"Confusion Matrix ({result.get('mode', 'test')})",
+    )
+    return str(json_path), str(png_path)
+
+
 if __name__ == "__main__":
     args = parse_args_with_optional_config()
 
@@ -290,3 +314,29 @@ if __name__ == "__main__":
         with open(output_path, "w", encoding="utf-8") as file_obj:
             json.dump(make_json_safe(payload), file_obj, indent=2)
         print(f"Saved evaluation payload -> {output_path}")
+
+        output_base = output_path.with_suffix("")
+        if payload.get("compare_silence_modes"):
+            official_result = payload.get("official_test_without_silence")
+            with_silence_result = payload.get("test_with_synthetic_silence")
+
+            if official_result is not None:
+                official_base = output_base.parent / f"{output_base.name}_official"
+                official_json, official_png = save_confusion_artifacts_for_result(official_result, official_base)
+                if official_json is not None:
+                    print(f"Saved confusion matrix JSON -> {official_json}")
+                    print(f"Saved confusion matrix PNG -> {official_png}")
+
+            if with_silence_result is not None:
+                with_silence_base = output_base.parent / f"{output_base.name}_with_silence"
+                with_silence_json, with_silence_png = save_confusion_artifacts_for_result(with_silence_result, with_silence_base)
+                if with_silence_json is not None:
+                    print(f"Saved confusion matrix JSON -> {with_silence_json}")
+                    print(f"Saved confusion matrix PNG -> {with_silence_png}")
+        else:
+            single_result = payload.get("result")
+            if single_result is not None:
+                single_json, single_png = save_confusion_artifacts_for_result(single_result, output_base)
+                if single_json is not None:
+                    print(f"Saved confusion matrix JSON -> {single_json}")
+                    print(f"Saved confusion matrix PNG -> {single_png}")

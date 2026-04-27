@@ -117,9 +117,13 @@ Available full-experiment configs:
 Optional full-experiment configs (additional ablations + MobileNetV2):
 - `configs/mobilenetv2_full_baseline.yaml`
 - `configs/mobilenetv2_full_specaugment.yaml`
+- `configs/resnet18_full_baseline_no_audio_tweaks.yaml`
 - `configs/resnet18_full_batch32.yaml`
 - `configs/resnet18_full_lr0003.yaml`
 - `configs/resnet18_full_unknown_detector.yaml`
+
+`resnet18_full_baseline_no_audio_tweaks.yaml` is a comparison baseline that uses
+`model: resnet18_no_audio_tweaks` (no audio-specific stem adaptation; 1-channel input is repeated to 3 channels).
 
 Run optional full configs:
 
@@ -215,6 +219,10 @@ Compare both test approaches in one command:
 ```bash
 python src/evaluate_checkpoint.py --config outputs/resnet18/resnet18_full_baseline_seed42/config_seed42.yaml --checkpoint_path outputs/resnet18/resnet18_full_baseline_seed42/best_model_seed42.pt --compare_silence_modes --output_json outputs/analysis/eval_seed42_compare_silence.json
 ```
+
+When `--output_json` is provided, the script also exports confusion matrix artifacts next to the payload:
+- single mode: `*_confusion_matrix.json` and `*_confusion_matrix.png`
+- compare mode: `*_official_confusion_matrix.json/.png` and `*_with_silence_confusion_matrix.json/.png`
 
 ### Separate Unknown Detector (optional)
 
