@@ -4,9 +4,8 @@
 
 **Authors**: 
 
-- Anna Ostrowska 
-
-- Igor Rudolf
+* [Anna Ostrowska ](https://github.com/annaostrowska03)
+* [Igor Rudolf](https://github.com/IgorRudolf)
 ---
 
 ## Quick Start
