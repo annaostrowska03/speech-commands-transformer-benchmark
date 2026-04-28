@@ -1,0 +1,27 @@
+experiment_name: ast_full_baseline
+model: ast
+data_path: data/train
+
+feature_extractor_name: MIT/ast-finetuned-audioset-10-10-0.4593
+model_name: MIT/ast-finetuned-audioset-10-10-0.4593
+use_pretrained: true
+freeze_backbone: false
+dropout: 0.1
+
+seeds: [42, 123, 2026, 2137]
+epochs: 50
+patience: 5
+batch_size: 16
+num_workers: 4
+
+lr: 0.00005
+weight_decay: 0.01
+warmup_ratio: 0.1
+
+balancing: none
+silence_train_samples: 2300
+silence_eval_samples: 250
+include_silence_in_test: false
+silence_test_samples: 250
+
+run_test: true
