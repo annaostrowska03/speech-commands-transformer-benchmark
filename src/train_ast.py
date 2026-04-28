@@ -62,6 +62,7 @@ def build_parser(defaults=None):
     parser = argparse.ArgumentParser(description="Train HuggingFace AST on Speech Commands")
     parser.add_argument("--config", type=str, default=defaults.get("config"))
     parser.add_argument("--experiment_name", type=str, default=defaults.get("experiment_name", "ast_full_baseline"))
+    parser.add_argument("--model", type=str, choices=["ast"], default=defaults.get("model", "ast"))
     parser.add_argument("--data_path", type=str, default=defaults.get("data_path", "./data/train"))
     parser.add_argument("--output_dir", type=str, default=defaults.get("output_dir", "outputs/ast"))
     parser.add_argument("--seeds", type=int, nargs="+", default=defaults.get("seeds", [42]))
@@ -383,7 +384,7 @@ def run_seed(args, seed):
     train_ds, train_loader, val_loader, test_loader = build_dataloaders(args, feature_extractor)
 
     model = get_model(
-        "ast",
+        args.model,
         num_classes=NUM_CLASSES,
         use_pretrained=args.use_pretrained,
         freeze_backbone=args.freeze_backbone,
