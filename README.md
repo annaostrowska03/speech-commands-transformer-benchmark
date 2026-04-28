@@ -160,6 +160,39 @@ Generated analysis files:
 - `outputs/analysis/top_confusions.csv`
 - `outputs/analysis/unknown_silence.csv`
 
+### Audio Spectrogram Transformer (AST)
+
+AST training uses HuggingFace `AutoFeatureExtractor` on raw 1-second waveforms. It does not use the
+`torchaudio` MelSpectrogram preprocessing path used by ResNet/MobileNet.
+
+Run a single AST full experiment:
+
+```bash
+python src/train_ast.py --config configs/ast_full_baseline.yaml
+```
+
+Run all AST full configs:
+
+```bash
+# Linux/Mac
+bash scripts/run_ast_configs.sh
+```
+
+```powershell
+# Windows PowerShell
+./scripts/run_ast_configs.ps1
+```
+
+Full AST configs use `seeds: [42, 123, 2026, 2137]`.
+
+AST outputs are saved per seed in:
+- `outputs/ast/{experiment_name}_seed{seed}/`
+
+Aggregate summaries are saved in:
+- `outputs/ast/{experiment_name}/summary_all_seeds.json`
+
+If GPU memory is insufficient, reduce `batch_size` from `16` to `8` in the AST YAML configs.
+
 ### Smoke sanity checks (fast)
 
 Run quick debug experiment:

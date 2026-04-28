@@ -29,6 +29,7 @@ class SpeechCommandsDataset(Dataset):
         include_silence_in_test=False,
         silence_test_samples=None,
         unknown_keep_prob=1.0,
+        return_waveform=False,
     ):
         """
         Args:
@@ -43,6 +44,7 @@ class SpeechCommandsDataset(Dataset):
             include_silence_in_test (bool): If True, include synthetic silence also in test split.
             silence_test_samples (int | None): Number of synthetic silence samples for test split when enabled.
             unknown_keep_prob (float): Probability of keeping an "unknown" sample in train split.
+            return_waveform (bool): Return processed 1D waveforms for AST instead of Mel-spectrogram features.
         """
         if split not in {"train", "val", "test"}:
             raise ValueError(f"Unsupported split: {split}")
@@ -61,6 +63,7 @@ class SpeechCommandsDataset(Dataset):
         self.include_silence_in_test = bool(include_silence_in_test)
         self.silence_test_samples = silence_eval_samples if silence_test_samples is None else int(silence_test_samples)
         self.unknown_keep_prob = unknown_keep_prob
+        self.return_waveform = bool(return_waveform)
 
         if not self.audio_root.exists():
             raise FileNotFoundError(f"Audio root does not exist: {self.audio_root}")
@@ -199,6 +202,9 @@ class SpeechCommandsDataset(Dataset):
             waveform = self._to_mono(waveform)
             waveform = self._resample_if_needed(waveform, sample_rate)
             waveform = self._pad_or_truncate(waveform, target_length=16000)
+
+        if self.return_waveform:
+            return waveform.squeeze(0), label
 
         spec = self.amp_to_db(self.mel_spec(waveform))
         if self.apply_augment:

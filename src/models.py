@@ -2,6 +2,12 @@ import inspect
 import torch.nn as nn
 from torchvision import models
 
+try:
+    from transformers import ASTConfig, ASTForAudioClassification
+except ImportError:
+    ASTConfig = None
+    ASTForAudioClassification = None
+
 
 class RepeatInputChannels(nn.Module):
     """Wrap a model and repeat input channels to match expected channel count."""
@@ -27,6 +33,27 @@ class RepeatInputChannels(nn.Module):
             )
         x = x.repeat(1, repeats, 1, 1)
         return self.base_model(x)
+
+
+class ASTLogitsWrapper(nn.Module):
+    """Wrap ASTForAudioClassification so forward returns logits directly."""
+
+    def __init__(self, ast_model):
+        super().__init__()
+        self.ast_model = ast_model
+
+    def forward(self, *args, **kwargs):
+        outputs = self.ast_model(*args, **kwargs)
+        return outputs.logits
+
+
+def _require_transformers_for_ast():
+    if ASTConfig is None or ASTForAudioClassification is None:
+        raise ImportError(
+            "The 'transformers' package is required to use the AST model. "
+            "Install it with `pip install transformers`."
+        )
+
 
 def get_resnet18_model(
     num_classes=12,
@@ -154,10 +181,45 @@ def get_mobilenetv2_model(
     return model
 
 
+def get_ast_model(
+    num_classes=12,
+    use_pretrained=True,
+    freeze_backbone=False,
+    dropout=0.0,
+    model_name="MIT/ast-finetuned-audioset-10-10-0.4593",
+):
+    _require_transformers_for_ast()
+
+    if use_pretrained:
+        model = ASTForAudioClassification.from_pretrained(
+            model_name,
+            num_labels=num_classes,
+            ignore_mismatched_sizes=True
+        )
+    else:
+        config = ASTConfig(num_labels=num_classes)
+        model = ASTForAudioClassification(config)
+
+    if dropout > 0.0:
+        model.classifier = nn.Sequential(
+            nn.Dropout(p=dropout),
+            model.classifier,
+        )
+
+    if freeze_backbone:
+        for param in model.audio_spectrogram_transformer.parameters():
+            param.requires_grad = False
+        for param in model.classifier.parameters():
+            param.requires_grad = True
+
+    return ASTLogitsWrapper(model)
+
+
 MODEL_BUILDERS = {
     "resnet18": get_resnet18_model,
     "resnet18_no_audio_tweaks": get_resnet18_no_audio_tweaks_model,
     "mobilenetv2": get_mobilenetv2_model,
+    "ast": get_ast_model,
 }
 
 
