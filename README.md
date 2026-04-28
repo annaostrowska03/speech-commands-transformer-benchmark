@@ -193,6 +193,62 @@ Aggregate summaries are saved in:
 
 If GPU memory is insufficient, reduce `batch_size` from `16` to `8` in the AST YAML configs.
 
+### Full experiment orchestration
+
+Full training should be run on a CUDA GPU machine.
+
+Before full GPU training, run:
+
+```bash
+python scripts/check_project_ready.py
+```
+
+Inspect what is already completed:
+
+```bash
+python scripts/list_experiment_status.py
+```
+
+Run all missing main full experiments on Linux/Mac:
+
+```bash
+bash scripts/run_all_full_experiments.sh
+```
+
+Include optional experiments:
+
+```bash
+bash scripts/run_all_full_experiments.sh --include-optional
+```
+
+Force rerunning even completed experiments:
+
+```bash
+bash scripts/run_all_full_experiments.sh --force
+```
+
+On Windows PowerShell:
+
+```powershell
+./scripts/run_all_full_experiments.ps1
+./scripts/run_all_full_experiments.ps1 -IncludeOptional
+./scripts/run_all_full_experiments.ps1 -Force
+```
+
+Rebuild report tables without retraining:
+
+```bash
+bash scripts/collect_results.sh
+```
+
+or:
+
+```powershell
+./scripts/collect_results.ps1
+```
+
+If AST GPU memory is insufficient, reduce `batch_size` from `16` to `8` in the AST YAML configs.
+
 ### Smoke sanity checks (fast)
 
 Run quick debug experiment:
