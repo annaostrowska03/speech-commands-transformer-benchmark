@@ -1,0 +1,19 @@
+{
+  "run_id": "ast_full_balancing_undersample_seed2137",
+  "model_name": "MIT/ast-finetuned-audioset-10-10-0.4593",
+  "seed": 2137,
+  "optimizer": "AdamW",
+  "learning_rate": 5e-05,
+  "dropout": 0.1,
+  "batch_size": 16,
+  "device": "cuda",
+  "device_name": "NVIDIA GeForce RTX 5090",
+  "best_epoch": 14,
+  "val_accuracy_best_epoch": 0.963677639046538,
+  "test_accuracy": 0.9711777615215801,
+  "test_f1_macro": 0.8758648651678685,
+  "training_time_seconds": 12628.438300132751,
+  "inference_latency_ms": 6.105020701620883,
+  "total_params": 86198028,
+  "trainable_params": 86198028
+}

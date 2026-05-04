@@ -1,0 +1,19 @@
+{
+  "run_id": "ast_full_dropout_p03_seed2137",
+  "model_name": "MIT/ast-finetuned-audioset-10-10-0.4593",
+  "seed": 2137,
+  "optimizer": "AdamW",
+  "learning_rate": 5e-05,
+  "dropout": 0.3,
+  "batch_size": 16,
+  "device": "cuda",
+  "device_name": "NVIDIA GeForce RTX 5090",
+  "best_epoch": 26,
+  "val_accuracy_best_epoch": 0.9714812712826334,
+  "test_accuracy": 0.9782004389173372,
+  "test_f1_macro": 0.886516074132892,
+  "training_time_seconds": 33225.855276584625,
+  "inference_latency_ms": 6.090641620241231,
+  "total_params": 86198028,
+  "trainable_params": 86198028
+}

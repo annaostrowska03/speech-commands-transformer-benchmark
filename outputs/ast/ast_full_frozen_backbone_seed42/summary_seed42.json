@@ -1,0 +1,19 @@
+{
+  "run_id": "ast_full_frozen_backbone_seed42",
+  "model_name": "MIT/ast-finetuned-audioset-10-10-0.4593",
+  "seed": 42,
+  "optimizer": "AdamW",
+  "learning_rate": 0.0001,
+  "dropout": 0.1,
+  "batch_size": 16,
+  "device": "cuda",
+  "device_name": "NVIDIA GeForce RTX 5090",
+  "best_epoch": 23,
+  "val_accuracy_best_epoch": 0.7609250851305335,
+  "test_accuracy": 0.742794440380395,
+  "test_f1_macro": 0.4782075475752486,
+  "training_time_seconds": 10510.572291374207,
+  "inference_latency_ms": 6.108852070378141,
+  "total_params": 86198028,
+  "trainable_params": 10764
+}

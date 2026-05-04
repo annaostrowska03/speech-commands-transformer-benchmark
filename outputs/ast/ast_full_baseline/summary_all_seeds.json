@@ -1,0 +1,99 @@
+{
+  "experiment_name": "ast_full_baseline",
+  "seeds": [
+    42,
+    123,
+    2026,
+    2137
+  ],
+  "runs": [
+    {
+      "run_id": "ast_full_baseline_seed42",
+      "model_name": "MIT/ast-finetuned-audioset-10-10-0.4593",
+      "seed": 42,
+      "optimizer": "AdamW",
+      "learning_rate": 5e-05,
+      "dropout": 0.1,
+      "batch_size": 16,
+      "device": "cuda",
+      "device_name": "NVIDIA GeForce RTX 5090",
+      "best_epoch": 8,
+      "val_accuracy_best_epoch": 0.9677922814982974,
+      "test_accuracy": 0.9723482077542063,
+      "test_f1_macro": 0.8764664808433634,
+      "training_time_seconds": 13897.930032014847,
+      "inference_latency_ms": 6.0870052548977,
+      "total_params": 86198028,
+      "trainable_params": 86198028
+    },
+    {
+      "run_id": "ast_full_baseline_seed123",
+      "model_name": "MIT/ast-finetuned-audioset-10-10-0.4593",
+      "seed": 123,
+      "optimizer": "AdamW",
+      "learning_rate": 5e-05,
+      "dropout": 0.1,
+      "batch_size": 16,
+      "device": "cuda",
+      "device_name": "NVIDIA GeForce RTX 5090",
+      "best_epoch": 12,
+      "val_accuracy_best_epoch": 0.9653802497162316,
+      "test_accuracy": 0.9714703730797366,
+      "test_f1_macro": 0.8755522243346213,
+      "training_time_seconds": 18192.51641893387,
+      "inference_latency_ms": 6.08485556407215,
+      "total_params": 86198028,
+      "trainable_params": 86198028
+    },
+    {
+      "run_id": "ast_full_baseline_seed2026",
+      "model_name": "MIT/ast-finetuned-audioset-10-10-0.4593",
+      "seed": 2026,
+      "optimizer": "AdamW",
+      "learning_rate": 5e-05,
+      "dropout": 0.1,
+      "batch_size": 16,
+      "device": "cuda",
+      "device_name": "NVIDIA GeForce RTX 5090",
+      "best_epoch": 18,
+      "val_accuracy_best_epoch": 0.9672247446083996,
+      "test_accuracy": 0.9724945135332845,
+      "test_f1_macro": 0.8782790502495627,
+      "training_time_seconds": 24691.57885503769,
+      "inference_latency_ms": 6.0943695747217905,
+      "total_params": 86198028,
+      "trainable_params": 86198028
+    },
+    {
+      "run_id": "ast_full_baseline_seed2137",
+      "model_name": "MIT/ast-finetuned-audioset-10-10-0.4593",
+      "seed": 2137,
+      "optimizer": "AdamW",
+      "learning_rate": 5e-05,
+      "dropout": 0.1,
+      "batch_size": 16,
+      "device": "cuda",
+      "device_name": "NVIDIA GeForce RTX 5090",
+      "best_epoch": 12,
+      "val_accuracy_best_epoch": 0.9650964812712827,
+      "test_accuracy": 0.9710314557425018,
+      "test_f1_macro": 0.8768771938284129,
+      "training_time_seconds": 18209.037518024445,
+      "inference_latency_ms": 6.08883438490184,
+      "total_params": 86198028,
+      "trainable_params": 86198028
+    }
+  ],
+  "test_accuracy": {
+    "mean": 0.9718361375274324,
+    "std": 0.000607653537887199,
+    "min": 0.9710314557425018,
+    "max": 0.9724945135332845
+  },
+  "test_f1_macro": {
+    "mean": 0.87679373731399,
+    "std": 0.000982543991621613,
+    "min": 0.8755522243346213,
+    "max": 0.8782790502495627
+  }
+}
