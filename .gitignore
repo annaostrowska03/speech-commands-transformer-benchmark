@@ -29,3 +29,7 @@ checkpoints/
 .history/
 .DS_Store
 Thumbs.db
+
+# MLflow
+mlflow.db
+mlruns/
