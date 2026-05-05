@@ -48,6 +48,7 @@ class ASTLogitsWrapper(nn.Module):
 
 
 def _require_transformers_for_ast():
+    """Raise a clear ImportError when the ``transformers`` package is not installed."""
     if ASTConfig is None or ASTForAudioClassification is None:
         raise ImportError(
             "The 'transformers' package is required to use the AST model. "
@@ -62,13 +63,29 @@ def get_resnet18_model(
     freeze_backbone=False,
     dropout=0.0,
 ):
+    """Build a ResNet-18 classifier adapted for single-channel mel-spectrogram input.
+
+    The first convolutional layer is replaced to accept ``input_channels`` channels.
+    When ``use_pretrained=True`` and ``input_channels=1``, the pretrained RGB
+    weights are averaged across the channel dimension so transfer learning is
+    preserved.
+
+    Args:
+        num_classes (int): Number of output classes.
+        input_channels (int): Number of input channels (1 for mel-spectrogram).
+        use_pretrained (bool): Load ImageNet-pretrained weights.
+        freeze_backbone (bool): Freeze all layers except conv1 and the classifier head.
+        dropout (float): Dropout probability before the final linear layer. 0 disables dropout.
+
+    Returns:
+        torch.nn.Module: ResNet-18 model ready for training.
+    """
     weights = models.ResNet18_Weights.IMAGENET1K_V1 if use_pretrained else None
     model = models.resnet18(weights=weights)
 
     if freeze_backbone:
         for param in model.parameters():
             param.requires_grad = False
-
 
     existing_layer = model.conv1
     model.conv1 = nn.Conv2d(
@@ -144,6 +161,22 @@ def get_mobilenetv2_model(
     freeze_backbone=False,
     dropout=0.0,
 ):
+    """Build a MobileNetV2 classifier adapted for single-channel mel-spectrogram input.
+
+    The first convolutional stem is replaced to accept ``input_channels`` channels,
+    with pretrained weights averaged when ``input_channels=1``. The classifier head
+    is replaced with an optional dropout layer followed by a linear projection.
+
+    Args:
+        num_classes (int): Number of output classes.
+        input_channels (int): Number of input channels.
+        use_pretrained (bool): Load ImageNet-pretrained weights.
+        freeze_backbone (bool): Freeze all layers except the conv stem and classifier.
+        dropout (float): Dropout probability in the classifier head.
+
+    Returns:
+        torch.nn.Module: MobileNetV2 model ready for training.
+    """
     weights = models.MobileNet_V2_Weights.IMAGENET1K_V2 if use_pretrained else None
     model = models.mobilenet_v2(weights=weights)
 
@@ -188,6 +221,23 @@ def get_ast_model(
     dropout=0.0,
     model_name="MIT/ast-finetuned-audioset-10-10-0.4593",
 ):
+    """Build an Audio Spectrogram Transformer (AST) classifier.
+
+    Uses the HuggingFace ``transformers`` library. When ``use_pretrained=True``,
+    the model is initialised from ``model_name`` with the classifier head replaced
+    to match ``num_classes``. Requires the ``transformers`` package.
+
+    Args:
+        num_classes (int): Number of output classes.
+        use_pretrained (bool): Load pretrained AudioSet weights from HuggingFace Hub.
+        freeze_backbone (bool): Freeze the audio spectrogram transformer encoder;
+            only the classifier head remains trainable.
+        dropout (float): Dropout probability prepended to the classifier head.
+        model_name (str): HuggingFace model identifier for the pretrained checkpoint.
+
+    Returns:
+        ASTLogitsWrapper: Wrapped AST model whose ``forward`` returns raw logits.
+    """
     _require_transformers_for_ast()
 
     if use_pretrained:
@@ -224,10 +274,22 @@ MODEL_BUILDERS = {
 
 
 def get_available_models():
+    """Return a sorted list of all registered model names."""
     return sorted(MODEL_BUILDERS.keys())
 
 
 def register_model(model_name, builder):
+    """Register a custom model builder under ``model_name``.
+
+    Args:
+        model_name (str): Unique name for the model.
+        builder (callable): Factory function that accepts keyword arguments and
+            returns an ``nn.Module``.
+
+    Raises:
+        ValueError: If ``model_name`` is empty or already registered.
+        TypeError: If ``builder`` is not callable.
+    """
     if not isinstance(model_name, str) or not model_name:
         raise ValueError("model_name must be a non-empty string")
     if not callable(builder):
@@ -238,6 +300,21 @@ def register_model(model_name, builder):
 
 
 def get_model(model_name, **model_kwargs):
+    """Instantiate a registered model, passing only the kwargs its builder accepts.
+
+    Unknown kwargs are silently dropped unless the builder accepts ``**kwargs``,
+    making it safe to pass a superset of configuration arguments.
+
+    Args:
+        model_name (str): Name of a registered model (see :func:`get_available_models`).
+        **model_kwargs: Configuration forwarded to the model builder.
+
+    Returns:
+        torch.nn.Module: Instantiated model.
+
+    Raises:
+        ValueError: If ``model_name`` is not registered.
+    """
     if model_name not in MODEL_BUILDERS:
         available = ", ".join(get_available_models())
         raise ValueError(f"Unsupported model '{model_name}'. Available models: {available}")

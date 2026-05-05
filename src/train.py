@@ -550,6 +550,7 @@ def make_json_safe(value):
 
 
 def resolve_run_output_paths(args):
+    """Create the run output directory and return a dict of output file paths."""
     checkpoint_name = Path(args.checkpoint_path).name if args.checkpoint_path else "best_model.pt"
     checkpoint_name = add_seed_suffix_to_filename(checkpoint_name, args.seed)
     run_output_dir = Path("outputs") / args.model / args.experiment_name
@@ -570,6 +571,7 @@ def resolve_run_output_paths(args):
 
 
 def write_epoch_history_csv(history_rows, csv_path):
+    """Write per-epoch training metrics to a CSV file."""
     fieldnames = [
         "epoch",
         "train_loss",
@@ -594,11 +596,13 @@ def write_epoch_history_csv(history_rows, csv_path):
 
 
 def write_run_summary(summary_payload, summary_path):
+    """Serialise ``summary_payload`` as indented JSON to ``summary_path``."""
     with open(summary_path, "w", encoding="utf-8") as file_obj:
         json.dump(summary_payload, file_obj, indent=2)
 
 
 def write_run_config(args, config_path):
+    """Serialise the resolved argument namespace to a YAML file."""
     config_payload = make_json_safe(vars(args))
     with open(config_path, "w", encoding="utf-8") as file_obj:
         yaml.safe_dump(config_payload, file_obj, sort_keys=True)
@@ -655,6 +659,11 @@ def aggregate_unknown_silence(run_summaries):
 
 
 def save_multi_seed_summary(base_args, run_results):
+    """Aggregate per-seed results and write ``summary_all_seeds.json``.
+
+    Skipped when fewer than two seeds were run. Returns the path to the
+    aggregate summary, or ``None`` if no summary was written.
+    """
     if len(run_results) < 2:
         return None
 
@@ -719,8 +728,12 @@ def save_multi_seed_summary(base_args, run_results):
     return str(aggregate_summary_path)
 
 def run_experiment(args):
-    """
-    Main experiment runner: setup, training loop, and logging.
+    """Execute a single training run for the given seed and configuration.
+
+    Builds datasets and data loaders, instantiates the model, runs the training
+    loop with early stopping, evaluates on the test split (when enabled), saves
+    all artefacts (checkpoint, history CSV, summary JSON, confusion matrix), and
+    returns a result dict suitable for :func:`save_multi_seed_summary`.
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu"
@@ -902,7 +915,6 @@ def run_experiment(args):
                 f"Time: {epoch_duration:.2f}s"
             )
 
-            # Early Stopping
             is_best = val_acc > best_val_acc
             if is_best:
                 best_val_acc = val_acc
@@ -1137,13 +1149,17 @@ def run_experiment(args):
 
 
 def load_yaml_config(config_path):
+    """Load a YAML config file and return it as a dict.
+
+    Applies a backward-compatibility shim: if the file contains a scalar ``seed``
+    key but no ``seeds`` list, it is converted to ``seeds: [seed]``.
+    """
     with open(config_path, "r", encoding="utf-8") as file_obj:
         config = yaml.safe_load(file_obj) or {}
 
     if not isinstance(config, dict):
         raise ValueError("Config file must contain a top-level key-value mapping")
 
-    # Backward compatibility for older configs that used `seed`.
     if "seed" in config and "seeds" not in config:
         config["seeds"] = [int(config["seed"])]
     config.pop("seed", None)
@@ -1152,17 +1168,16 @@ def load_yaml_config(config_path):
 
 
 def build_parser():
+    """Build and return the argument parser for the CNN training script."""
     parser = argparse.ArgumentParser(description="Speech Commands Training Script")
     parser.add_argument('--config', type=str, default=None, help='Path to YAML config file')
 
     available_models = get_available_models()
-    
-    # Data params
+
     parser.add_argument('--data_path', type=str, default='.//data//train', help='Path to dataset root')
-    parser.add_argument('--experiment_name', type=str, default='baseline', help='MLflow run name')
+    parser.add_argument('--experiment_name', type=str, default='baseline', help='Experiment name used in output directory')
     parser.add_argument('--model', type=str, default='resnet18', choices=available_models, help=f"Model name ({', '.join(available_models)})")
-    
-    # Hyperparams
+
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
     parser.add_argument('--batch_size', type=int, default=32, help='Batch size')
     parser.add_argument('--epochs', type=int, default=50, help='Max epochs')
@@ -1172,12 +1187,11 @@ def build_parser():
     parser.add_argument('--weight_decay', type=float, default=0.0, help='Weight decay')
     parser.add_argument('--dropout', type=float, default=0.0, help='Dropout before classifier head')
     parser.add_argument('--n_mels', type=int, default=64, choices=[64, 128], help='Mel filterbank bins')
-    parser.add_argument('--seeds', type=int, nargs='+', default=[42], help='List of seeds for execution (can contain one element)')
+    parser.add_argument('--seeds', type=int, nargs='+', default=[42], help='List of random seeds; each seed runs a full experiment')
     parser.add_argument('--num_workers', type=int, default=4, help='DataLoader workers')
     parser.add_argument('--freeze_backbone', action='store_true', help='Freeze all layers except modified conv1 and fc')
     parser.add_argument('--use_pretrained', action='store_true', help='Use pre-trained weights')
 
-    # Augmentation and balancing
     parser.add_argument('--use_augment', action='store_true', help='Enable SpecAugment')
     parser.add_argument('--augment', type=str, choices=['true', 'false', 'True', 'False'], help='Compatibility flag: set augmentation on/off')
     parser.add_argument('--time_mask', type=int, default=20, help='SpecAugment time mask')
@@ -1191,7 +1205,7 @@ def build_parser():
     parser.add_argument('--unknown_detector_lr', type=float, default=None, help='Learning rate for separate unknown detector (defaults to --lr)')
     parser.add_argument('--unknown_detector_dropout', type=float, default=None, help='Dropout for separate unknown detector (defaults to --dropout)')
     parser.add_argument('--unknown_detector_threshold', type=float, default=0.5, help='Probability threshold for predicting unknown in separate detector')
-    parser.add_argument('--balancing', type=str, default='none', choices=['none', 'loss', 'undersample', 'loss+undersample'], help='Compatibility flag for class balancing')
+    parser.add_argument('--balancing', type=str, default='none', choices=['none', 'loss', 'undersample', 'loss+undersample'], help='Class balancing strategy')
     parser.add_argument('--silence_train_samples', type=int, default=2300, help='Synthetic silence samples for train')
     parser.add_argument('--silence_eval_samples', type=int, default=250, help='Synthetic silence samples for validation')
     parser.add_argument('--include_silence_in_test', action='store_true', help='Include synthetic silence samples in test split')
@@ -1204,6 +1218,7 @@ def build_parser():
 
 
 def parse_args_with_config():
+    """Parse CLI arguments, applying YAML config file defaults when ``--config`` is supplied."""
     parser = build_parser()
 
     config_parser = argparse.ArgumentParser(add_help=False)
@@ -1222,6 +1237,12 @@ def parse_args_with_config():
 
 
 def expand_seed_runs(args):
+    """Expand a multi-seed args namespace into a list of per-seed namespaces.
+
+    When multiple seeds are specified, each seed's namespace gets its own
+    ``experiment_name`` suffixed with ``_seed{seed}`` so output directories
+    remain distinct.
+    """
     seeds = args.seeds if args.seeds is not None else [42]
     if len(seeds) == 0:
         raise ValueError("seeds must contain at least one value")
@@ -1233,6 +1254,7 @@ def expand_seed_runs(args):
         run_args.seed = seed
 
         if len(seeds) > 1:
+            # Each seed gets its own output directory
             run_args.experiment_name = f"{args.experiment_name}_seed{seed}"
 
         runs.append(run_args)

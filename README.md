@@ -2,10 +2,57 @@
 
 **Project II: Deep Learning** — Comparison of CNN and Transformer architectures for speech command recognition.
 
-**Authors**: 
+**Authors**:
 
-* [Anna Ostrowska ](https://github.com/annaostrowska03)
+* [Anna Ostrowska](https://github.com/annaostrowska03)
 * [Igor Rudolf](https://github.com/IgorRudolf)
+
+---
+
+## Project Overview
+
+This project benchmarks convolutional and transformer-based neural networks on the **Google Speech Commands v1** keyword-recognition dataset. The task is a **12-class classification** problem:
+
+| Class index | Label |
+|---:|---|
+| 0–9 | `yes`, `no`, `up`, `down`, `left`, `right`, `on`, `off`, `stop`, `go` |
+| 10 | `unknown` (all other words in the vocabulary) |
+| 11 | `silence` (generated synthetically from background-noise files) |
+
+### Models compared
+
+| Architecture | Script | Key characteristic |
+|---|---|---|
+| **ResNet-18** | `src/train.py` | Audio-adapted stem (1-channel conv1 initialised from averaged ImageNet weights) |
+| **ResNet-18 no-tweaks** | `src/train.py` | Standard 3-channel stem; 1-channel spectrogram is repeated to RGB (ablation) |
+| **MobileNetV2** | `src/train.py` | Lightweight baseline; same audio-adaptation strategy as ResNet-18 |
+| **AST** | `src/train_ast.py` | Audio Spectrogram Transformer — fine-tuned from `MIT/ast-finetuned-audioset-10-10-0.4593` |
+
+### Ablations (ResNet-18)
+
+Systematic ablation study covering:
+- Mel filterbank resolution (`n_mels`: 64 vs 128)
+- Optimizer (`Adam` vs `SGD`)
+- Dropout (`p = 0.0`, `0.3`, `0.5`)
+- SpecAugment (time + frequency masking)
+- Class-balancing strategies: weighted cross-entropy loss, unknown undersampling, and their combination
+- Separate binary unknown detector (two-stage prediction)
+- Batch size and learning rate sweeps
+
+Each full experiment is run over **4 seeds** (`[42, 123, 2026, 2137]`) and results are aggregated (mean ± std).
+
+### Input pipeline
+
+- **ResNet-18 / MobileNetV2**: raw 16 kHz waveform → log-mel spectrogram (64 or 128 mel bins, 1 second → shape `[1, n_mels, T]`)
+- **AST**: raw 16 kHz waveform processed by HuggingFace `AutoFeatureExtractor` into a 2-D patch input
+
+### Key metrics reported
+
+- Test accuracy and macro F1-score (mean ± std across seeds)
+- Per-class precision / recall — with focus on `unknown` and `silence`
+- Inference latency (ms/sample on GPU)
+- Total and trainable parameter counts
+
 ---
 
 ## Quick Start

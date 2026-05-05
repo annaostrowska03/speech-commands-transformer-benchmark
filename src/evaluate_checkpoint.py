@@ -23,6 +23,7 @@ from train import (
 
 
 def load_yaml_mapping(config_path):
+    """Load a YAML file and return its contents as a dict."""
     with open(config_path, "r", encoding="utf-8") as file_obj:
         config = yaml.safe_load(file_obj) or {}
     if not isinstance(config, dict):
@@ -31,6 +32,7 @@ def load_yaml_mapping(config_path):
 
 
 def build_parser():
+    """Build the argument parser for the checkpoint evaluation script."""
     parser = argparse.ArgumentParser(
         description="Evaluate an existing checkpoint on Speech Commands test split"
     )
@@ -69,6 +71,13 @@ def build_parser():
 
 
 def parse_args_with_optional_config():
+    """Parse CLI arguments, applying config file defaults when ``--config`` is provided.
+
+    Auto-detects the checkpoint path from the config directory when
+    ``--checkpoint_path`` is omitted and exactly one ``best_model_seed*.pt`` file
+    exists in the config's directory. Similarly auto-detects the unknown-detector
+    checkpoint.
+    """
     parser = build_parser()
 
     config_parser = argparse.ArgumentParser(add_help=False)
@@ -112,6 +121,7 @@ def parse_args_with_optional_config():
 
 
 def build_test_loader(args, include_silence_in_test):
+    """Build a DataLoader for the test split with optional synthetic silence."""
     test_ds = SpeechCommandsDataset(
         root_dir=args.data_path,
         split="test",
@@ -133,6 +143,7 @@ def build_test_loader(args, include_silence_in_test):
 
 
 def build_main_model(args, device):
+    """Instantiate and return the main 12-class classifier."""
     model = get_model(
         args.model,
         num_classes=12,
@@ -145,6 +156,7 @@ def build_main_model(args, device):
 
 
 def build_unknown_detector_model(args, device):
+    """Instantiate and return the binary unknown-detector model."""
     detector_model_name = args.unknown_detector_model if args.unknown_detector_model else args.model
     detector_dropout = args.unknown_detector_dropout if args.unknown_detector_dropout is not None else args.dropout
 
@@ -160,6 +172,15 @@ def build_unknown_detector_model(args, device):
 
 
 def evaluate_mode(args, include_silence_in_test):
+    """Run evaluation for one test-split configuration and return a result dict.
+
+    Args:
+        args: Parsed argument namespace.
+        include_silence_in_test (bool): Whether to include synthetic silence samples.
+
+    Returns:
+        dict: Evaluation result containing metrics, confusion matrix, and metadata.
+    """
     set_seed(int(args.eval_seed))
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -248,6 +269,7 @@ def evaluate_mode(args, include_silence_in_test):
 
 
 def print_short_result(result):
+    """Print a one-line evaluation summary to stdout."""
     test_payload = result["test"]
     print(
         f"[{result['mode']}] "
@@ -259,6 +281,12 @@ def print_short_result(result):
 
 
 def save_confusion_artifacts_for_result(result, output_base_path):
+    """Save confusion matrix JSON and PNG next to *output_base_path*.
+
+    Returns:
+        Tuple[str | None, str | None]: Paths to the saved JSON and PNG files,
+        or (None, None) if no confusion matrix is present.
+    """
     confusion_payload = result.get("confusion_matrix")
     if confusion_payload is None:
         return None, None

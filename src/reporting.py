@@ -6,11 +6,13 @@ from pathlib import Path
 
 
 def read_json(path_obj):
+    """Read and return the JSON content of *path_obj*."""
     with open(path_obj, "r", encoding="utf-8") as file_obj:
         return json.load(file_obj)
 
 
 def safe_get(payload, *keys):
+    """Drill into nested dicts by *keys*, returning None if any key is missing."""
     current = payload
     for key in keys:
         if not isinstance(current, dict) or key not in current:
@@ -20,6 +22,7 @@ def safe_get(payload, *keys):
 
 
 def to_float_or_none(value):
+    """Convert *value* to float, returning None on failure or when *value* is None."""
     if value is None:
         return None
     try:
@@ -29,17 +32,20 @@ def to_float_or_none(value):
 
 
 def format_float(value, digits=4):
+    """Format *value* as a fixed-point string with *digits* decimal places, or empty string for None."""
     if value is None:
         return ""
     return f"{float(value):.{digits}f}"
 
 
 def aggregate_candidate_for_run_dir(run_dir):
+    """Return the expected path of the aggregate summary for *run_dir*'s experiment."""
     base_name = re.sub(r"_seed\d+$", "", run_dir.name)
     return run_dir.parent / base_name / "summary_all_seeds.json"
 
 
 def row_from_aggregate_summary(summary_path):
+    """Build a leaderboard row dict from a ``summary_all_seeds.json`` file."""
     payload = read_json(summary_path)
     aggregate = payload.get("aggregate", {})
 
@@ -64,6 +70,7 @@ def row_from_aggregate_summary(summary_path):
 
 
 def row_from_single_seed_summary(summary_path):
+    """Build a leaderboard row dict from a single ``summary_seed*.json`` file."""
     payload = read_json(summary_path)
     test_payload = payload.get("test", {}) or {}
     best_validation = payload.get("best_validation", {}) or {}
@@ -92,6 +99,12 @@ def row_from_single_seed_summary(summary_path):
 
 
 def collect_leaderboard_rows(outputs_dir):
+    """Collect leaderboard rows from all experiments under *outputs_dir*.
+
+    Prefers aggregate summaries (``summary_all_seeds.json``) over single-seed
+    summaries when both exist for the same experiment. Rows are sorted by
+    descending test accuracy then descending macro F1.
+    """
     rows = []
     aggregate_paths = sorted(outputs_dir.glob("*/*/summary_all_seeds.json"))
 
@@ -124,6 +137,7 @@ def collect_leaderboard_rows(outputs_dir):
 
 
 def collect_top_confusions(outputs_dir):
+    """Collect the top per-class confusion pairs from all ``error_analysis_seed*.json`` files."""
     rows = []
     for error_path in sorted(outputs_dir.glob("*/*/error_analysis_seed*.json")):
         payload = read_json(error_path)
@@ -149,6 +163,7 @@ def collect_top_confusions(outputs_dir):
 
 
 def collect_unknown_silence_rows(outputs_dir):
+    """Collect precision/recall rows for the *unknown* and *silence* classes across all experiments."""
     rows = []
 
     for aggregate_path in sorted(outputs_dir.glob("*/*/summary_all_seeds.json")):
@@ -199,6 +214,7 @@ def collect_unknown_silence_rows(outputs_dir):
 
 
 def write_csv(rows, output_path, fieldnames):
+    """Write *rows* as a CSV file with the given *fieldnames* column order."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w", newline="", encoding="utf-8") as file_obj:
         writer = csv.DictWriter(file_obj, fieldnames=fieldnames)
@@ -208,6 +224,7 @@ def write_csv(rows, output_path, fieldnames):
 
 
 def write_markdown_table(rows, output_path):
+    """Write *rows* as a Markdown leaderboard table to *output_path*."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
     lines = []
     lines.append("| Model | Experiment | Runs | Test Acc (mean±std) | Test Macro-F1 (mean±std) | Val Acc (mean±std) | Latency [ms] | Train time [s] | Trainable params | Unknown recall | Silence recall |")
@@ -234,6 +251,7 @@ def write_markdown_table(rows, output_path):
 
 
 def main():
+    """Entry point: scan the outputs directory and write leaderboard and analysis CSVs."""
     parser = argparse.ArgumentParser(description="Build experiment summary tables from outputs directory")
     parser.add_argument("--outputs_dir", type=str, default="outputs", help="Root outputs directory")
     parser.add_argument("--analysis_dir", type=str, default="outputs/analysis", help="Directory for generated reports")

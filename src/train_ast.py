@@ -25,12 +25,20 @@ try:
 except ImportError:
     yaml = None
 
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+except Exception:
+    plt = None
+
 
 CLASS_NAMES = SpeechCommandsDataset.TARGET_WORDS + ["unknown", "silence"]
 NUM_CLASSES = 12
 
 
 def require_transformers_for_ast():
+    """Raise a clear ImportError when the ``transformers`` package is not installed."""
     if AutoFeatureExtractor is None or get_cosine_schedule_with_warmup is None:
         raise ImportError(
             "The 'transformers' package is required to train AST. "
@@ -39,6 +47,7 @@ def require_transformers_for_ast():
 
 
 def load_yaml_config(config_path):
+    """Load a YAML config file and return it as a dict, or return an empty dict when *config_path* is None."""
     if config_path is None:
         return {}
     if yaml is None:
@@ -51,6 +60,7 @@ def load_yaml_config(config_path):
 
 
 def save_yaml_config(config, output_path):
+    """Write *config* dict to *output_path* as a sorted YAML file."""
     if yaml is None:
         raise ImportError("PyYAML is required to save YAML config files.")
     with open(output_path, "w", encoding="utf-8") as file_obj:
@@ -58,6 +68,11 @@ def save_yaml_config(config, output_path):
 
 
 def build_parser(defaults=None):
+    """Build the argument parser for the AST training script.
+
+    *defaults* is an optional dict of argument defaults, typically loaded from
+    a YAML config file via :func:`load_yaml_config`.
+    """
     defaults = defaults or {}
     parser = argparse.ArgumentParser(description="Train HuggingFace AST on Speech Commands")
     parser.add_argument("--config", type=str, default=defaults.get("config"))
@@ -104,6 +119,7 @@ def build_parser(defaults=None):
 
 
 def parse_args():
+    """Parse CLI arguments, applying YAML config defaults when ``--config`` is supplied."""
     config_parser = argparse.ArgumentParser(add_help=False)
     config_parser.add_argument("--config", type=str, default=None)
     config_args, remaining_args = config_parser.parse_known_args()
@@ -125,6 +141,7 @@ def parse_args():
 
 
 def set_seed(seed):
+    """Seed Python, NumPy, and PyTorch random number generators for reproducibility."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -133,6 +150,7 @@ def set_seed(seed):
 
 
 def get_device():
+    """Return the best available torch device and its human-readable name."""
     if torch.cuda.is_available():
         device = torch.device("cuda")
         return device, torch.cuda.get_device_name(0)
@@ -142,12 +160,14 @@ def get_device():
 
 
 def count_model_parameters(model):
+    """Return (total_params, trainable_params) for *model*."""
     total_params = sum(parameter.numel() for parameter in model.parameters())
     trainable_params = sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad)
     return int(total_params), int(trainable_params)
 
 
 def get_class_weights(labels, num_classes=NUM_CLASSES):
+    """Compute inverse-frequency class weights normalised to sum to ``num_classes``."""
     counts = np.bincount(np.asarray(labels, dtype=np.int64), minlength=num_classes)
     total = counts.sum()
     weights = np.zeros(num_classes, dtype=np.float32)
@@ -157,6 +177,7 @@ def get_class_weights(labels, num_classes=NUM_CLASSES):
 
 
 def make_collate_fn(feature_extractor):
+    """Return a collate function that applies *feature_extractor* to a batch of raw waveforms."""
     def collate_fn(batch):
         waveforms, labels = zip(*batch)
         waveform_arrays = [
@@ -174,6 +195,7 @@ def make_collate_fn(feature_extractor):
 
 
 def train_one_epoch(model, dataloader, criterion, optimizer, scheduler, device):
+    """Run one training epoch and return (mean_loss, accuracy)."""
     model.train()
     running_loss = 0.0
     correct = 0
@@ -199,6 +221,11 @@ def train_one_epoch(model, dataloader, criterion, optimizer, scheduler, device):
 
 
 def evaluate(model, dataloader, criterion, device, measure_latency=False):
+    """Evaluate *model* on *dataloader* and return (metrics_dict, all_labels, all_preds, latency_ms).
+
+    When *measure_latency* is True, wall-clock inference time is measured and
+    ``latency_ms`` contains the per-sample latency in milliseconds.
+    """
     model.eval()
     running_loss = 0.0
     correct = 0
@@ -250,6 +277,7 @@ def evaluate(model, dataloader, criterion, device, measure_latency=False):
 
 
 def save_history(history, output_path):
+    """Write per-epoch training history rows to a CSV file."""
     fieldnames = [
         "epoch",
         "train_loss",
@@ -267,6 +295,7 @@ def save_history(history, output_path):
 
 
 def save_confusion_outputs(labels, preds, output_dir, seed):
+    """Save a confusion matrix JSON and PNG for the given predictions."""
     matrix = confusion_matrix(labels, preds, labels=list(range(NUM_CLASSES)))
     payload = {
         "labels": CLASS_NAMES,
@@ -277,10 +306,8 @@ def save_confusion_outputs(labels, preds, output_dir, seed):
     with open(json_path, "w", encoding="utf-8") as file_obj:
         json.dump(payload, file_obj, indent=2)
 
-    import matplotlib
-
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    if plt is None:
+        return
 
     fig, ax = plt.subplots(figsize=(10, 8))
     image = ax.imshow(matrix, interpolation="nearest", cmap="Blues")
@@ -298,6 +325,11 @@ def save_confusion_outputs(labels, preds, output_dir, seed):
 
 
 def maybe_start_mlflow(args, seed, device, device_name):
+    """Start an MLflow run if ``args.use_mlflow`` is True and MLflow is available.
+
+    Returns the active ``mlflow`` module on success, or ``None`` if MLflow is
+    disabled or unavailable.
+    """
     if not args.use_mlflow:
         return None
     try:
@@ -325,6 +357,7 @@ def maybe_start_mlflow(args, seed, device, device_name):
 
 
 def build_dataloaders(args, feature_extractor):
+    """Build train, validation, and (optionally) test data loaders for AST."""
     use_unknown_undersampling = args.balancing in {"undersample", "loss+undersample"}
     train_unknown_keep_prob = args.unknown_keep_prob if use_unknown_undersampling else 1.0
     pin_memory = torch.cuda.is_available()
@@ -373,6 +406,13 @@ def build_dataloaders(args, feature_extractor):
 
 
 def run_seed(args, seed):
+    """Execute a full training and evaluation run for a single *seed*.
+
+    Builds the feature extractor, data loaders, and AST model; runs the training
+    loop with early stopping; evaluates on the test split (when enabled); saves
+    all artefacts (checkpoint, history CSV, confusion matrix, summary JSON); and
+    returns a summary dict.
+    """
     require_transformers_for_ast()
     set_seed(seed)
     device, device_name = get_device()
@@ -525,6 +565,7 @@ def run_seed(args, seed):
 
 
 def summarize_metric(summaries, metric_name):
+    """Return mean/std/min/max statistics for *metric_name* across *summaries*, or None if no values exist."""
     values = [summary[metric_name] for summary in summaries if summary.get(metric_name) is not None]
     if not values:
         return None
@@ -538,6 +579,7 @@ def summarize_metric(summaries, metric_name):
 
 
 def save_aggregate_summary(args, summaries):
+    """Aggregate per-seed result summaries and write ``summary_all_seeds.json``."""
     output_dir = Path(args.output_dir) / args.experiment_name
     output_dir.mkdir(parents=True, exist_ok=True)
     payload = {
