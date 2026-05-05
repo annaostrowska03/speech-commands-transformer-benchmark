@@ -193,6 +193,61 @@ for sf in sorted(OUTPUTS.rglob("summary_all_seeds.json")):
         experiments.setdefault(exp, []).append(record)
 
 
+# Collect eval_no_override results (re-evaluation on official test set without silence)
+NO_OVERRIDE_DIR = OUTPUTS / "analysis" / "eval_no_override"
+no_override = {}
+
+for jf in sorted(NO_OVERRIDE_DIR.glob("*_no_override.json")):
+    # skip confusion matrix files
+    if "confusion_matrix" in jf.stem:
+        continue
+    try:
+        d = json.loads(jf.read_text(encoding="utf-8"))
+    except Exception:
+        continue
+    result = d.get("result", {})
+    test = result.get("test", {})
+    if not test:
+        continue
+    # Extract experiment name: strip _seed{N}_no_override
+    stem = jf.stem  # e.g. resnet18_full_baseline_seed42_no_override
+    stem = stem.replace("_no_override", "")  # resnet18_full_baseline_seed42
+    exp = stem.rsplit("_seed", 1)[0]        # resnet18_full_baseline
+    no_override.setdefault(exp, []).append({
+        "no_ov_acc":       test.get("acc", float("nan")),
+        "no_ov_f1":        test.get("macro_f1", float("nan")),
+        "no_ov_precision": test.get("macro_precision", float("nan")),
+        "no_ov_recall":    test.get("macro_recall", float("nan")),
+        "no_ov_loss":      test.get("loss", float("nan")),
+    })
+
+
+# Collect eval_no_override_with_silence results (official test set WITH silence class)
+NO_OVERRIDE_SIL_DIR = OUTPUTS / "analysis" / "eval_no_override_with_silence"
+no_override_sil = {}
+
+for jf in sorted(NO_OVERRIDE_SIL_DIR.glob("*_no_override_with_silence.json")):
+    if "confusion_matrix" in jf.stem:
+        continue
+    try:
+        d = json.loads(jf.read_text(encoding="utf-8"))
+    except Exception:
+        continue
+    result = d.get("result", {})
+    test = result.get("test", {})
+    if not test:
+        continue
+    stem = jf.stem.replace("_no_override_with_silence", "")
+    exp = stem.rsplit("_seed", 1)[0]
+    no_override_sil.setdefault(exp, []).append({
+        "no_ov_sil_acc":       test.get("acc", float("nan")),
+        "no_ov_sil_f1":        test.get("macro_f1", float("nan")),
+        "no_ov_sil_precision": test.get("macro_precision", float("nan")),
+        "no_ov_sil_recall":    test.get("macro_recall", float("nan")),
+        "no_ov_sil_loss":      test.get("loss", float("nan")),
+    })
+
+
 #Aggregate per experiment
 
 def first(records, key):
@@ -220,6 +275,24 @@ for exp_name, records in sorted(experiments.items()):
     tr_m, _    = agg(col("test_recall"))
     tl_m, _    = agg(col("test_loss"))
     il_m, _    = agg(col("inference_latency_ms"))
+
+    no_ov_records = no_override.get(exp_name, [])
+    def no_ov_col(key):
+        return [r.get(key, float("nan")) for r in no_ov_records]
+    no_ta_m, no_ta_s = agg(no_ov_col("no_ov_acc"))
+    no_tf_m, no_tf_s = agg(no_ov_col("no_ov_f1"))
+    no_tp_m, _       = agg(no_ov_col("no_ov_precision"))
+    no_tr_m, _       = agg(no_ov_col("no_ov_recall"))
+    no_tl_m, _       = agg(no_ov_col("no_ov_loss"))
+
+    no_ov_sil_records = no_override_sil.get(exp_name, [])
+    def no_ov_sil_col(key):
+        return [r.get(key, float("nan")) for r in no_ov_sil_records]
+    no_sa_m, no_sa_s = agg(no_ov_sil_col("no_ov_sil_acc"))
+    no_sf_m, no_sf_s = agg(no_ov_sil_col("no_ov_sil_f1"))
+    no_sp_m, _       = agg(no_ov_sil_col("no_ov_sil_precision"))
+    no_sr_m, _       = agg(no_ov_sil_col("no_ov_sil_recall"))
+    no_sl_m, _       = agg(no_ov_sil_col("no_ov_sil_loss"))
 
     va_m, va_s = agg(col("val_acc"))
     vf_m, vf_s = agg(col("val_f1"))
@@ -271,6 +344,18 @@ for exp_name, records in sorted(experiments.items()):
         "Test Recall Mean":    pct(tr_m),
         "Test Loss Mean":      r4(tl_m),
         "Inference Latency Mean (ms)": r4(il_m),
+        # No-override re-evaluation
+        "No Ov Test Acc Mean":       pct(no_ta_m), "No Ov Test Acc Std":       pct(no_ta_s),
+        "No Ov Test F1 Mean":        pct(no_tf_m), "No Ov Test F1 Std":        pct(no_tf_s),
+        "No Ov Test Precision Mean": pct(no_tp_m),
+        "No Ov Test Recall Mean":    pct(no_tr_m),
+        "No Ov Test Loss Mean":      r4(no_tl_m),
+        # No-override WITH silence re-evaluation
+        "No Ov Sil Test Acc Mean":       pct(no_sa_m), "No Ov Sil Test Acc Std":       pct(no_sa_s),
+        "No Ov Sil Test F1 Mean":        pct(no_sf_m), "No Ov Sil Test F1 Std":        pct(no_sf_s),
+        "No Ov Sil Test Precision Mean": pct(no_sp_m),
+        "No Ov Sil Test Recall Mean":    pct(no_sr_m),
+        "No Ov Sil Test Loss Mean":      r4(no_sl_m),
     }
     rows.append(row)
 
@@ -294,6 +379,12 @@ FIELDS = [
     "Test Acc Mean", "Test Acc Std", "Test F1 Mean", "Test F1 Std",
     "Test Precision Mean", "Test Recall Mean", "Test Loss Mean",
     "Inference Latency Mean (ms)",
+    "No Ov Test Acc Mean", "No Ov Test Acc Std",
+    "No Ov Test F1 Mean", "No Ov Test F1 Std",
+    "No Ov Test Precision Mean", "No Ov Test Recall Mean", "No Ov Test Loss Mean",
+    "No Ov Sil Test Acc Mean", "No Ov Sil Test Acc Std",
+    "No Ov Sil Test F1 Mean", "No Ov Sil Test F1 Std",
+    "No Ov Sil Test Precision Mean", "No Ov Sil Test Recall Mean", "No Ov Sil Test Loss Mean",
 ]
 
 OUT_CSV.parent.mkdir(parents=True, exist_ok=True)
