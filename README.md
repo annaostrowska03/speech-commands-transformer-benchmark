@@ -1,6 +1,19 @@
-# Speech Commands Classification with Transformers
+# Speech Commands Classification with CNNs and Transformers
 
-**Project II: Deep Learning** — Comparison of CNN and Transformer architectures for speech command recognition.
+This project benchmarks convolutional and transformer-based neural networks for keyword recognition on the Google Speech Commands v1 dataset.
+
+We compare ResNet-18, MobileNetV2, and an Audio Spectrogram Transformer (AST), including systematic ablations over preprocessing, optimization, dropout, SpecAugment, and class-balancing strategies. Experiments are run across multiple seeds and evaluated using accuracy, macro F1-score, per-class metrics, latency, and parameter counts.
+
+## Models compared
+
+- ResNet-18 adapted for log-mel spectrogram inputs
+- ResNet-18 baseline with repeated-channel spectrogram input
+- MobileNetV2 lightweight baseline
+- Audio Spectrogram Transformer fine-tuned from a pretrained AST checkpoint
+
+## Evaluation focus
+
+The project focuses not only on overall accuracy, but also on robustness for difficult classes such as `unknown` and `silence`, as well as practical inference considerations such as latency and model size.
 
 **Authors**:
 
